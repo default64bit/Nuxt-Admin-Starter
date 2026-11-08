@@ -1,0 +1,10 @@
+# Extends the default gitleaks rules. Allowlist only clearly fake test fixtures and placeholder examples.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fake credentials used by tests and placeholder examples"
+paths = [
+  '''tests/fixtures/''',
+  '''\.env\.example$''',
+]

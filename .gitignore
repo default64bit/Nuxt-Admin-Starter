@@ -1,0 +1,25 @@
+node_modules/
+.nuxt/
+.nuxt-*/
+.output/
+dist/
+coverage/
+playwright-report/
+test-results/
+.pnpm-store/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+
+.deploy/
+
+# Agent skills are restored from skills-lock.json (`npx skills experimental_install`), not committed.
+.agents/skills/
+.claude/skills/
+.claude/worktrees/
+.claude/settings.local.json
+
+# Machine-local notes (e.g. extraction source path)
+*.local.md
