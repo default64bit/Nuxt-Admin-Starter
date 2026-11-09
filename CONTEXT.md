@@ -18,6 +18,28 @@ _Avoid_: fork, downstream, consumer
 The private application the Starter's generic pieces are extracted from. Never copied with its history or its business logic.
 _Avoid_: upstream, origin
 
+### Access
+
+**User**:
+A person who can sign in to the admin panel. Every user holds at least one Role; there is no account without admin access.
+_Avoid_: shopper, customer, member, admin user, account
+
+**Default admin**:
+The one User created at first setup, who can never be disabled and always holds the Super role.
+_Avoid_: owner, root, first admin
+
+**Role**:
+A named set of Permissions given to Users; a User's access is the union of their Roles' Permissions.
+_Avoid_: group, profile
+
+**Super role**:
+The Role that always holds every Permission and can never be renamed, reduced or deleted.
+_Avoid_: admin role, superuser
+
+**Permission**:
+One protected admin action or read, defined in code; never created or edited in the panel.
+_Avoid_: right, capability, scope
+
 ### Demo domain
 
 **Demo ticket**:
