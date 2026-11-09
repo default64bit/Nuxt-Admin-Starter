@@ -56,7 +56,9 @@ dbSuite("database foundation", () => {
     });
 
     it("runs the production seed list without error on an empty database", async () => {
-      expect(await runSeeds(database.db, {})).toEqual({ applied: [], skipped: [], warnings: [] });
+      const report = await runSeeds(database.db, {});
+      expect(report).toMatchObject({ applied: [], skipped: [] });
+      expect(report.warnings).toHaveLength(1); // no Default admin phone: warn and retry next run
     });
   });
 });

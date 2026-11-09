@@ -30,6 +30,52 @@
       "next": "Next",
       "showing": "Showing {from}–{to} of {total}",
       "pagination": "Pagination"
+    },
+    "permissions": {
+      "groups": {
+        "users": {
+          "label": "Users",
+          "hint": "Accounts and who may sign in."
+        },
+        "roles": {
+          "label": "Roles",
+          "hint": "Roles and the Permissions they grant."
+        },
+        "audit": {
+          "label": "Audit log",
+          "hint": "The record of who changed what and when."
+        }
+      },
+      "keys": {
+        "viewUsers": {
+          "label": "View users",
+          "hint": "Open the Users list and each User's page."
+        },
+        "createUsers": {
+          "label": "Create users",
+          "hint": "Add a User by phone number and give them Roles."
+        },
+        "editUsers": {
+          "label": "Edit users",
+          "hint": "Change a User's names."
+        },
+        "disableUsers": {
+          "label": "Disable and re-enable users",
+          "hint": "Block or restore sign-in; ends their sessions."
+        },
+        "viewRoles": {
+          "label": "View roles",
+          "hint": "Open the Roles list and each Role's page."
+        },
+        "manageRoles": {
+          "label": "Manage roles",
+          "hint": "Create, edit and delete Roles; give Roles to Users."
+        },
+        "viewAuditLog": {
+          "label": "View audit log",
+          "hint": "See who changed what and when."
+        }
+      }
     }
   },
   "error": {

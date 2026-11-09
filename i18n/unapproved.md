@@ -7,3 +7,7 @@ key from this list when it is approved.
 
 - every key under `landing` (`seo.*`, `hero.*`, `signIn.cta`)
 - `app.name`
+
+## Permission catalogue
+
+- every key under `admin.permissions` (`groups.*`, `keys.*`)

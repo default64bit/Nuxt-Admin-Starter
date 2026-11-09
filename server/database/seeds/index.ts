@@ -1,11 +1,12 @@
 import { eq, sql } from "drizzle-orm";
 import * as schema from "../schema";
 import type { Db, Tx } from "../types";
+import { seedDefaultAdmin } from "./default-admin";
 import { reconcilePermissionCatalog } from "./permissions";
 
 export { reconcilePermissionCatalog };
 
-/** Environment settings a seed version may read (the Default admin arrives with the accounts slice). */
+/** Environment settings a seed version may read. */
 export interface SeedEnv {
   DEFAULT_ADMIN_PHONE?: string;
   DEFAULT_ADMIN_GIVEN_NAME?: string;
@@ -24,9 +25,10 @@ export interface VersionedSeed {
   run: (tx: Tx, ctx: { env: SeedEnv; report: SeedReport }) => Promise<boolean>;
 }
 
-// Append a version here to add immutable system data or the Default admin. A completed version is never
-// re-run, so what it created can be changed in the panel without a later deploy undoing it.
-const VERSIONED_SEEDS: VersionedSeed[] = [];
+// Append a version here to add immutable system data. A completed version is never re-run, so what it created
+// can be changed in the panel without a later deploy undoing it. The production seed creates only the `super`
+// Role (the Permission reconcile, which runs on every seed run) and then the Default admin.
+const VERSIONED_SEEDS: VersionedSeed[] = [{ version: "001-default-admin", run: (tx, { env, report }) => seedDefaultAdmin(tx, env, report) }];
 
 /**
  * Reconciles the Permission catalogue and applies every seed version that has not completed yet. Each run is one
