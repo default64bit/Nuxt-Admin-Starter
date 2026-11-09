@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
+import { buildRouteRules } from "./shared/utils/route-rules";
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -32,7 +33,7 @@ export default defineNuxtConfig({
     optimizeDeps: { include: ["@vueuse/core", "reka-ui", "vue-sonner"] },
   },
 
-  modules: ["@nuxt/a11y", "@nuxt/eslint", "@nuxtjs/color-mode", "@nuxtjs/i18n", "@pinia/nuxt", "shadcn-nuxt"],
+  modules: ["@nuxt/a11y", "@nuxt/eslint", "@nuxtjs/color-mode", "@nuxtjs/i18n", "@pinia/nuxt", "nuxt-security", "shadcn-nuxt"],
 
   // Light/dark is owned by @nuxtjs/color-mode alone: a static pre-paint script reads localStorage and
   // sets `dark` on <html> before first paint. No cookie, so cached HTML never varies per visitor.
@@ -42,6 +43,26 @@ export default defineNuxtConfig({
     fallback: "light",
     storage: "localStorage",
     storageKey: "color-mode",
+  },
+
+  // Rendering and cache policy per page class, mirrored for `/en/` (ADR-0013): the landing page is
+  // shared-cached; sign-in and `/admin/**` are uncached, `private, no-store` and `noindex`.
+  routeRules: {
+    ...buildRouteRules(),
+    // The module's coarse per-IP route limiter is off so ordinary page loads and assets are never
+    // throttled. A route that needs a limit (the OTP endpoints) opts in with its own rule.
+    "/**": { security: { rateLimiter: false } },
+  },
+
+  // Token CSRF is off: it cannot work on shared-cached pages. `server/middleware/10.csrf.ts` guards
+  // state-changing `/api/v1` requests by origin instead (ADR-0023). The CSP is built from content hashes
+  // by `server/plugins/csp.ts` (ADR-0022), so the module's per-request nonce and its own CSP header are off.
+  security: {
+    csrf: false,
+    nonce: false,
+    headers: {
+      contentSecurityPolicy: false,
+    },
   },
 
   hooks: {
@@ -74,6 +95,10 @@ export default defineNuxtConfig({
     },
     public: {
       siteUrl: "",
+      // Optional pieces: empty means not configured. The media origin joins the CSP image sources and
+      // the error-tracking DSN adds its origin and report endpoint (ADR-0022).
+      mediaBaseUrl: "",
+      glitchtipDsn: "",
     },
   },
 

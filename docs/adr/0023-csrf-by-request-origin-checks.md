@@ -11,6 +11,7 @@
 
 - `nuxt-security`'s CSRF stays off. One Nitro middleware protects every `POST`, `PUT`, `PATCH` and `DELETE` under `/api/v1/**`: allow `Sec-Fetch-Site` of `same-origin` or `none`; if it is absent, require `Origin` to match the configured site origin; if both are absent, respond `403 csrf_rejected`.
 - Any request with a body, and sign-out (which sends `{}`), must send `Content-Type: application/json`.
+- The one exception to the JSON rule is the media upload, which sends raw bytes: `POST /api/v1/admin/media` (exact path and method) may carry a non-JSON body, and the origin check above still applies to it.
 - The session cookie is `HttpOnly` and `SameSite=Lax`. Sign-out is `POST`, never `DELETE`.
 - Provider callbacks that must accept cross-site `POST`s go on an explicit allowlist. The Starter ships it empty; a Project that adds a provider callback adds its path with a spec change.
 

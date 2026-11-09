@@ -1,12 +1,34 @@
 import { send, setResponseHeader, setResponseStatus, type H3Event } from "h3";
+import { PRIVATE_CACHE_CONTROL, isPrivatePagePath } from "../shared/utils/route-rules";
 import { isApiV1Path, toApiErrorBody } from "./utils/api-error";
 import { requestLogger } from "./utils/logger";
 
+/**
+ * The framework's error renderer writes `cache-control: no-cache` after this chain's first link (and
+ * always for a 404), which would make a private page's error cacheable. Pin the header at the moment
+ * the response head is written, so the error pages of private routes (the admin 404 in particular)
+ * stay `private, no-store` (ADR-0013).
+ */
+function pinPrivateCacheControl(event: H3Event) {
+  const res = event.node.res;
+  if (res.headersSent) return;
+  const writeHead = res.writeHead.bind(res) as (...args: unknown[]) => unknown;
+  (res as { writeHead: unknown }).writeHead = (...args: unknown[]) => {
+    const last = args[args.length - 1];
+    if (last && typeof last === "object" && !Array.isArray(last)) delete (last as Record<string, unknown>)["cache-control"];
+    if (!res.headersSent) res.setHeader("cache-control", PRIVATE_CACHE_CONTROL);
+    return writeHead(...args);
+  };
+}
+
 // First link in Nitro's error-handler chain (registered in `nuxt.config.ts`). It answers `/api/v1`
 // errors with the standard JSON body and leaves everything else (pages, health) unhandled so Nuxt
-// renders its own error page.
+// renders its own error page; the error pages of private routes keep `private, no-store`.
 export default async function apiErrorHandler(error: unknown, event: H3Event) {
-  if (!isApiV1Path(event.path)) return;
+  if (!isApiV1Path(event.path)) {
+    if (isPrivatePagePath(event.path)) pinPrivateCacheControl(event);
+    return;
+  }
 
   const body = toApiErrorBody(error);
   if (body.statusCode >= 500) {
