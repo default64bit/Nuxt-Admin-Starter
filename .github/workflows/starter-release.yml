@@ -1,0 +1,59 @@
+# Starter-only workflow: `just first-run` deletes this whole file. The jobs are also wrapped in starter-meta markers.
+name: Starter release
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # starter-meta:start
+  release-check:
+    name: Release check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # All tags are needed to find the latest release.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # `.starter-release` is newer than the latest tag, the changelog has its section, Unreleased is empty.
+      - run: node scripts/starter/release.ts check
+  # starter-meta:end
+
+  # starter-meta:start
+  release-tag:
+    name: Release tag
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    concurrency:
+      group: starter-release-tag
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Create the annotated tag
+        run: |
+          tag="$(node scripts/starter/release.ts version)"
+          if git rev-parse --quiet --verify "refs/tags/${tag}" >/dev/null; then
+            echo "error: tag ${tag} already exists; bump .starter-release in the release PR." >&2
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "${tag}" -m "Starter release ${tag}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${tag}"
+  # starter-meta:end

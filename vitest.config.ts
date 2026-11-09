@@ -6,6 +6,9 @@ export default defineVitestConfig({
       "tests/unit/**/*.{test,spec}.ts",
       "tests/components/**/*.{test,spec}.ts",
       "tests/integration/**/*.{test,spec}.ts",
+      // starter-meta:start
+      "tests/starter/**/*.{test,spec}.ts",
+      // starter-meta:end
     ],
     environment: "nuxt",
     environmentOptions: {

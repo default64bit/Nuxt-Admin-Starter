@@ -53,19 +53,19 @@ Issues and PRs may describe behavior in neutral terms. Before pushing, check tha
 
 These exist only in the Starter and are removed by `just first-run`:
 
-- This document, `CHANGELOG.md`, and the `.starter-release` file.
+- This document, `CHANGELOG.md`, the `.starter-release` file and `scripts/starter/` (the release check script).
 - The AGENTS.md section "Working on the Starter itself" and the CONTEXT.md section "Starter and projects".
 - The README, replaced by a short Project stub. `LICENSE` is untouched.
-- Starter-only tests (marker, rename, strip, `demo-remove` and `.starter-release` fixtures) and the Starter-only CI jobs: `first-run`, which runs `just first-run` with the demo removed and everything Off and then typecheck, lint, unit tests, build and integration tests; and `release-check` and `release-tag`, described below. The release workflow's Deployment step is skipped in the Starter by a marked condition.
+- Starter-only tests, all in `tests/starter/` (marker, rename, strip, `demo-remove` and `.starter-release` fixtures) and the Starter-only CI jobs: `first-run`, which runs `just first-run` with the demo removed and everything Off and then typecheck, lint, unit tests, build and integration tests; and `release-check` and `release-tag`, described below. These two live in `.github/workflows/starter-release.yml`, a workflow that exists only in the Starter and is deleted whole, so that they stay out of `ci.yml`, which release-images calls. The release workflow's Deployment step is skipped in the Starter by a marked condition.
 
 ## Release checklist
 
 1. Make sure `develop` is green in CI: `checks`, `integration`, `deploy-automation`, `security`, `e2e`, `all-off` and `first-run`.
 2. Decide the version. MINOR when the release has pieces with Port notes, PATCH for fixes. Stay on 0.x until the owner decides otherwise.
-3. Move the `Unreleased` entries of `CHANGELOG.md` into a new section named for the version, with the date, and leave `Unreleased` empty. Every entry carries its summary, PR link, Area tags and Port steps.
-4. Bump `.starter-release` to the new version, past the latest tag.
-5. Open a develop-to-main PR containing both changes. `release-check` verifies that `.starter-release` is newer than the latest tag and that a matching changelog section exists.
-6. Merge the PR. `release-tag` creates the annotated tag from `.starter-release` and fails if the tag already exists. Released tags are protected from deletion and update by a repository ruleset.
+3. Move the `Unreleased` entries of `CHANGELOG.md` into a new section headed `## [vX.Y.Z] - YYYY-MM-DD`, and leave `Unreleased` empty (an HTML comment is fine). Every entry carries its summary, PR link, Area tags and Port steps.
+4. Bump `.starter-release` to the new version, past the latest tag. Between releases it holds the upcoming version (`v0.1.0` until the first release is cut), so after a release it equals the latest tag until the next bump.
+5. Open a develop-to-main PR containing both changes. `release-check` verifies that `.starter-release` is newer than the latest tag and that a matching changelog section exists with `Unreleased` emptied. Run the same check locally with `node scripts/starter/release.ts check` (the tags must be fetched).
+6. Merge the PR. `release-tag` (both jobs are in `.github/workflows/starter-release.yml`) creates the annotated tag from `.starter-release` on the merge commit and fails if the tag already exists. A tag pushed with the workflow token starts no other workflow; the release image workflow already runs on the push to `main`. Released tags are protected from deletion and update by a repository ruleset.
 7. **At the first release (`v0.1.0`):** delete the "Source project" term from `CONTEXT.md`, and any wording that refers to the extraction, before the release PR merges.
 8. Confirm the release images were built and that no Deployment was queued from the Starter.
 
