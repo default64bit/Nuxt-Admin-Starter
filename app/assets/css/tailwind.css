@@ -280,6 +280,10 @@ html.dark {
   html {
     scrollbar-gutter: stable;
   }
+  /* Set by `ScrollLock` for non-modal overlays; the gutter above keeps the layout from shifting. */
+  html.scroll-locked {
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground;
   }
