@@ -27,3 +27,13 @@ _Avoid_: bare "ticket" for this entity (it collides with planning tickets on the
 **Reference module**:
 The demo domain's role as the copy-me example of a complete domain module, from schema to pages and tests.
 _Avoid_: sample module, example feature
+
+### Admin lists
+
+**List view**:
+One of the interchangeable presentations of the same admin list query: Table, Cards or Board. Choosing one never changes what is listed.
+_Avoid_: mode, layout, display
+
+**Board**:
+A List view with one column per status, where an item moves to the next status by drag or by its action button, one step forward only.
+_Avoid_: kanban, pipeline
