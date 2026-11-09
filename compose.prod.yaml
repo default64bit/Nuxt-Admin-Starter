@@ -1,0 +1,14 @@
+# Production overlay: registry images only, never a `build:` section. The release workflow builds `app` (runtime
+# target) and `tools` once per commit and pushes them tagged with the full commit SHA; the base images below are
+# mirrored unchanged under `base/`, with the same tag and digest as in compose.yaml.
+x-tools-image: &tools-image
+  image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/tools:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+
+services:
+  postgres:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+  app:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/app:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+  db-ensure: *tools-image
+  migrate: *tools-image
+  seed: *tools-image

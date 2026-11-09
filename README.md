@@ -20,13 +20,15 @@ It is being extracted from a real Nuxt 4 shop's admin, keeping only what is not 
 
 ## Quick start
 
-Needs Node 24 (`.nvmrc`), pnpm via corepack and [`just`](https://github.com/casey/just).
+Needs Docker with Compose, [`just`](https://github.com/casey/just), and Node 24 (`.nvmrc`) with pnpm via corepack for the quality gates.
 
 ```bash
-just install   # install dependencies
-just dev       # Nuxt dev server on http://localhost:3000
-just lint && just typecheck && just test && just build
+cp .env.example .env   # safe dummy values; set a real NUXT_SESSION_PASSWORD
+just dev               # whole dev stack in Docker with HMR on http://localhost:3000
+just install && just lint && just typecheck && just test && just build
 ```
+
+`COMPOSE_PROFILES` in `.env` switches infrastructure Optional pieces on and off. See [local development and deployment](docs/architecture/local-development-deployment.md).
 
 ## Agent skills
 

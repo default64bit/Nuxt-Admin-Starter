@@ -75,6 +75,26 @@ jobs:
       - run: just db-check
       - run: just test-integration
 
+  # Compose validation and every infra test that needs Docker. Each such test runs here and in no other job: they skip
+  # unless INFRA_TESTS=1, which only `just test-compose` sets. Later infra pieces add their tests to this job.
+  deploy-automation:
+    name: Compose validation and Docker infra tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      # No .env exists in CI, so both resolve the committed .env.example (its COMPOSE_PROFILES included).
+      - run: just compose-check
+      - run: just test-compose
+
   security:
     name: Dependency audit and secret scan
     runs-on: ubuntu-24.04

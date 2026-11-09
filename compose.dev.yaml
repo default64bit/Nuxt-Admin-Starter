@@ -1,0 +1,28 @@
+# Development overlay: every Node-based service runs from the `dev` image with the repository bind-mounted.
+# node_modules lives in a named volume so host and container platform binaries never clash.
+x-dev-node: &dev-node
+  build:
+    context: .
+    target: dev
+  image: nuxt-admin-starter-dev:local
+  user: ${HOST_UID:-1000}:${HOST_GID:-1000}
+  volumes:
+    - .:/app
+    - node-modules:/app/node_modules
+
+services:
+  app:
+    <<: *dev-node
+    command: [corepack, pnpm, exec, nuxt, dev, --host, 0.0.0.0]
+    environment:
+      NODE_ENV: development
+      # drizzle-kit (`just db-generate`) reads DATABASE_URL.
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+    healthcheck:
+      start_period: 120s
+  db-ensure: *dev-node
+  migrate: *dev-node
+  seed: *dev-node
+
+volumes:
+  node-modules:
