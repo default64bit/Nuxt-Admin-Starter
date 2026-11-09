@@ -1,0 +1,54 @@
+{
+  "app": {
+    "name": "Nuxt Admin Starter"
+  },
+  "language": {
+    "switch": {
+      "label": "Language",
+      "triggerLabel": "Language: {name}",
+      "menuLabel": "Choose language"
+    },
+    "options": {
+      "fa": {
+        "name": "فارسی",
+        "short": "Fa"
+      },
+      "en": {
+        "name": "English",
+        "short": "En"
+      }
+    }
+  },
+  "theme": {
+    "switch": {
+      "label": "Dark mode"
+    }
+  },
+  "error": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you are looking for does not exist or has moved."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again."
+    },
+    "backHome": "Back to home"
+  },
+  "auth": {
+    "signedOut": "You have been signed out."
+  },
+  "landing": {
+    "seo": {
+      "title": "Nuxt Admin Starter",
+      "description": "A starting point for internal admin and dashboard applications."
+    },
+    "hero": {
+      "title": "Nuxt Admin Starter",
+      "description": "A starting point for internal admin and dashboard applications. Sign in to open the admin panel."
+    },
+    "signIn": {
+      "cta": "Admin sign-in"
+    }
+  }
+}

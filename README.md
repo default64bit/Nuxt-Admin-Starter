@@ -16,7 +16,17 @@ It is being extracted from a real Nuxt 4 shop's admin, keeping only what is not 
 
 ## Status
 
-**Planning.** The extraction is being mapped with the `wayfinder` skill on this repo's GitHub Issues. See [docs/wayfinder-seed.md](docs/wayfinder-seed.md). There is no application code yet.
+**Under construction.** The extraction is tracked on this repo's GitHub Issues (see [docs/wayfinder-seed.md](docs/wayfinder-seed.md)). The walking skeleton is in: toolchain, app foundation and a landing page in `fa` (RTL, default) and `en` (LTR). Features land slice by slice.
+
+## Quick start
+
+Needs Node 24 (`.nvmrc`), pnpm via corepack and [`just`](https://github.com/casey/just).
+
+```bash
+just install   # install dependencies
+just dev       # Nuxt dev server on http://localhost:3000
+just lint && just typecheck && just test && just build
+```
 
 ## Agent skills
 

@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main]
+  # The release workflow calls this one for pushes to main and version tags.
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Superseded develop pushes and PR runs are cancelled; a run called for a release is never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop') }}
+
+env:
+  CI: "true"
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests, build
+    runs-on: ubuntu-24.04
+    env:
+      # nuxt typecheck can run out of memory with Node's default heap on a small hosted runner.
+      NODE_OPTIONS: --max-old-space-size=5120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just lint
+      - run: just typecheck
+      - run: just test
+      - run: just build
+
+  security:
+    name: Dependency audit and secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just audit
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
