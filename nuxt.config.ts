@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineNuxtConfig({
@@ -41,6 +42,39 @@ export default defineNuxtConfig({
     fallback: "light",
     storage: "localStorage",
     storageKey: "color-mode",
+  },
+
+  hooks: {
+    // Put the standard `/api/v1` error body (ADR-0015) in front of Nuxt's own error renderer, which
+    // keeps answering every non-API request. Setting `nitro.errorHandler` directly would replace it.
+    "nitro:config"(nitroConfig) {
+      const apiHandler = fileURLToPath(new URL("./server/error-handler.ts", import.meta.url));
+      const existing = nitroConfig.errorHandler;
+      nitroConfig.errorHandler = [apiHandler, ...(Array.isArray(existing) ? existing : existing ? [existing] : [])];
+    },
+  },
+
+  // Private values are supplied by `NUXT_*` variables at runtime (ADR-0014); `server/utils/runtime-config-schema.ts`
+  // validates them at boot. Optional pieces read as "not configured" while their keys are empty.
+  runtimeConfig: {
+    // Explicit environment flag (local | test | staging | production); not derived from NODE_ENV.
+    appEnv: "local",
+    databaseUrl: "",
+    session: {
+      password: "",
+    },
+    // Private object storage. Empty means not configured: readiness skips it and boot never fails.
+    s3: {
+      endpoint: "",
+      region: "us-east-1",
+      accessKey: "",
+      secretKey: "",
+      privateBucket: "",
+      publicBucket: "",
+    },
+    public: {
+      siteUrl: "",
+    },
   },
 
   shadcn: {

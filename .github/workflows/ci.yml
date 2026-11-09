@@ -42,6 +42,39 @@ jobs:
       - run: just test
       - run: just build
 
+  integration:
+    name: Postgres-backed integration tests
+    runs-on: ubuntu-24.04
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      # A role that may create and drop the throwaway databases the tests use.
+      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just db-check
+      - run: just test-integration
+
   security:
     name: Dependency audit and secret scan
     runs-on: ubuntu-24.04
