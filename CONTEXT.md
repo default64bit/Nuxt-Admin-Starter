@@ -4,6 +4,8 @@ A copy-and-own starting point for admin panels and dashboards, so each new proje
 
 ## Language
 
+<!-- starter-meta:start -->
+
 ### Starter and projects
 
 **Starter**:
@@ -30,6 +32,8 @@ _Avoid_: migration guide, upgrade notes
 A part of the infrastructure or a Channel that a Project can turn **Off** (stops running, no code change) or have **Removed** (its code, services, settings and tables deleted) while everything else keeps working: media storage, error tracking, Telegram, Web Push, backups, server deploy and the web edge.
 _Avoid_: feature flag, module, plugin, add-on
 
+<!-- starter-meta:end -->
+
 ### Access
 
 **User**:
@@ -51,6 +55,26 @@ _Avoid_: admin role, superuser
 **Permission**:
 One protected admin action or read, defined in code; never created or edited in the panel.
 _Avoid_: right, capability, scope
+
+**Session**:
+A signed-in User's period of access to the panel. It ends after 30 minutes idle or 12 hours in total, when the User signs out, or when the User is disabled. Every User has the same session rules.
+_Avoid_: login, token
+
+**OTP**:
+The one-time code sent by SMS to a phone number to sign in or to confirm a new phone number. It is valid for a short time with a limited number of attempts, is kept only while it is active, and is never logged, audited or placed in a payload.
+_Avoid_: password, PIN, verification code
+
+**Test code**:
+The active OTP handed back to the sign-in form, only when the mock SMS adapter runs in a local or test environment, so development needs no SMS account.
+_Avoid_: dev OTP
+
+**SMS provider**:
+The seam through which the application sends the OTP by SMS. It has a mock adapter (the default) and a Kavenegar adapter (shipped but off); nothing else sends SMS.
+_Avoid_: SMS gateway, vendor (in code)
+
+**Permission prerequisite**:
+A Permission that another Permission cannot be held without (for example `manage-roles` needs `view-roles`). The server refuses a Role that breaks one.
+_Avoid_: permission dependency, implied permission
 
 ### Demo domain
 
@@ -111,3 +135,49 @@ _Avoid_: transport, provider (reserved for the SMS sender)
 **Message language**:
 The one language a User chooses for everything every Channel sends them, separate from the panel's language.
 _Avoid_: notification locale
+
+**Notification event**:
+One kind of Notification, defined in code in the notification catalogue: its key, titles and copy in both languages, the Permission that gates it, an optional recipient, its link and its dedupe rule. A Project adds an event by adding a catalogue entry.
+_Avoid_: alert type, trigger
+
+**Outbox**:
+The durable list of deliveries recorded in the same database transaction as the change that raises a Notification. The notification worker delivers them to Channels after the change commits, retrying with backoff and never delivering the same logical Notification twice.
+_Avoid_: queue, message bus
+
+**Notification worker**:
+The separate process that reads the Outbox and delivers to Channels. A failure here never rolls back the change that raised the Notification.
+_Avoid_: cron job, background job (in general)
+
+### Audit log
+
+**Audit event**:
+One append-only record of an administrative change or a sensitive read: who did it, what it was, what it touched, when, and the outcome. The database refuses edits and deletes.
+_Avoid_: log line, activity entry
+
+**Action key**:
+The stable `entity.verb` name an audit event carries (for example `demo_ticket.status_changed`). It is not a Permission key, and stored keys are never renamed.
+_Avoid_: event type, permission
+
+**Action group**:
+The group an action key is filed under on the Audit log page (for example Users or Roles). An action key the page does not know is shown raw under "Other".
+_Avoid_: category
+
+**Event sentence**:
+The one-line reading of an audit event on the Audit log page. Only some actions have one; the rest show their label and a change count.
+_Avoid_: description, message
+
+### Media
+
+**Media object**:
+The record of one uploaded image in the media registry: where it is stored, its type, size and dimensions, who uploaded it and for which purpose. It starts staged (uploaded and processed, not yet attached) and becomes attached when a record references it. Objects nothing references any more are removed by media cleanup.
+_Avoid_: attachment, file record
+
+### Rendering
+
+**Shared-cached page**:
+A public page served from the server cache whose HTML is identical for every visitor and never contains session data. The landing page is the only one.
+_Avoid_: static page, prerendered page
+
+**Private page**:
+Any page served uncached with `no-store` and `noindex`, so it can show session data. Every admin page and sign-in is one.
+_Avoid_: dynamic page
