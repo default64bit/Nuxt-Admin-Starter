@@ -59,3 +59,25 @@ _Avoid_: mode, layout, display
 **Board**:
 A List view with one column per status, where an item moves to the next status by drag or by its action button, one step forward only.
 _Avoid_: kanban, pipeline
+
+### Dashboard
+
+**Dashboard module**:
+One card on the admin Dashboard that a User can add, remove, resize among its allowed sizes, and reorder. A User is offered only the modules whose data they may see.
+_Avoid_: widget, tile, panel
+
+**Dashboard layout**:
+One User's own choice of Dashboard modules, their order, their sizes, whether each fills the space left in its row, and the date range each module shows. Each module appears in it at most once. It follows the User across devices; a new User starts from the default layout and may reset to it.
+_Avoid_: dashboard config, workspace
+
+**Needs attention**:
+The Dashboard module, always first and never removable, that counts the work queues waiting now. A User sees only the queues whose pages they may open; each count matches that page's menu badge.
+_Avoid_: alerts, to-do, inbox
+
+**Chart style**:
+One User's choice of how every admin chart is drawn: **Soft**, **Glow** or **Pro**. It changes only how charts look, never the numbers, and is separate from the light/dark theme.
+_Avoid_: theme, skin, chart theme
+
+**Analytics strip**:
+The row of figures above an admin list page that summarises that page's records.
+_Avoid_: KPI bar, stats header
