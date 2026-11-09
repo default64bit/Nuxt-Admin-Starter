@@ -18,6 +18,14 @@ _Avoid_: fork, downstream, consumer
 The private application the Starter's generic pieces are extracted from. Never copied with its history or its business logic.
 _Avoid_: upstream, origin
 
+**Starter release**:
+A tagged version of the Starter whose changes are described for Projects to copy by hand. A Project records the Starter release it has caught up to.
+_Avoid_: upstream version, Starter update
+
+**Port note**:
+The hand-applied instructions for bringing one change of a Starter release into a Project.
+_Avoid_: migration guide, upgrade notes
+
 **Optional piece**:
 A part of the infrastructure or a Channel that a Project can turn **Off** (stops running, no code change) or have **Removed** (its code, services, settings and tables deleted) while everything else keeps working: media storage, error tracking, Telegram, Web Push, backups, server deploy and the web edge.
 _Avoid_: feature flag, module, plugin, add-on
