@@ -81,3 +81,21 @@ _Avoid_: theme, skin, chart theme
 **Analytics strip**:
 The row of figures above an admin list page that summarises that page's records.
 _Avoid_: KPI bar, stats header
+
+### Notifications
+
+**Notification**:
+One item telling a User about work they may act on. It stays Open until that work is done, by anyone; each User has their own read state.
+_Avoid_: alert, attention item, message
+
+**Inbox**:
+A User's list of the Notifications they may see, reached from the bell and its own page. It cannot be turned off.
+_Avoid_: feed, notification center
+
+**Channel**:
+An outside way a Notification also reaches a User: Telegram or Web Push. Each User turns each Channel on or off; the Inbox is not a Channel.
+_Avoid_: transport, provider (reserved for the SMS sender)
+
+**Message language**:
+The one language a User chooses for everything every Channel sends them, separate from the panel's language.
+_Avoid_: notification locale
