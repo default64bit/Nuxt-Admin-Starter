@@ -18,6 +18,10 @@ _Avoid_: fork, downstream, consumer
 The private application the Starter's generic pieces are extracted from. Never copied with its history or its business logic.
 _Avoid_: upstream, origin
 
+**Optional piece**:
+A part of the infrastructure or a Channel that a Project can turn **Off** (stops running, no code change) or have **Removed** (its code, services, settings and tables deleted) while everything else keeps working: media storage, error tracking, Telegram, Web Push, backups, server deploy and the web edge.
+_Avoid_: feature flag, module, plugin, add-on
+
 ### Access
 
 **User**:
