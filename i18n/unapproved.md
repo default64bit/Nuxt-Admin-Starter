@@ -45,6 +45,10 @@ key from this list when it is approved.
 
 - every key under `admin.strip`
 
+## List views
+
+- every key under `admin.listView` and `admin.boardView`
+
 <!-- demo-ticket:start -->
 ## Demo tickets
 

@@ -10,7 +10,12 @@ import { DataTable, DataTableEmpty, type DataTableFeatures } from "@/components/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ADMIN_NAV_ICONS } from "~/components/admin/admin-nav-icons";
+import AdminCardList from "~/components/admin/AdminCardList.vue";
+import AdminRowCard from "~/components/admin/AdminRowCard.vue";
 import AdminSearchInput from "~/components/admin/AdminSearchInput.vue";
+import AdminViewSwitch from "~/components/admin/AdminViewSwitch.vue";
+import type { AdminCardFact, AdminListView } from "~/components/admin/admin-list-view";
+import DemoTicketBoard from "~/components/demo-ticket/DemoTicketBoard.vue";
 import DemoTicketDialog from "~/components/demo-ticket/DemoTicketDialog.vue";
 import DemoTicketStatusBadge from "~/components/demo-ticket/DemoTicketStatusBadge.vue";
 import DemoTicketWaitingChip from "~/components/demo-ticket/DemoTicketWaitingChip.vue";
@@ -23,8 +28,8 @@ import { DEMO_TICKET_UNASSIGNED, type DemoTicketRow } from "~~/shared/schemas/de
 import { buildDemoTicketListUrlQuery, parseDemoTicketListUrl, type DemoTicketListState } from "~~/shared/utils/demo-ticket-list-url";
 import { parseApiError } from "~~/shared/utils/api-error-client";
 
-// The Demo tickets list, Table view (.specs/demo-tickets/spec.md): newest first, 20 per page, search by title, the
-// status, priority and assignee filters in the URL. A row opens the ticket's dialog; `?ticket=<id>` opens it directly.
+// The Demo tickets list (.specs/demo-tickets/spec.md): a Table, Cards or Board of the same tickets (the view lives in
+// page memory only, ADR-0027). Newest first, 20 per page, search by title, the status, priority and assignee filters in the URL. A row opens the ticket's dialog; `?ticket=<id>` opens it directly.
 definePageMeta({ permission: "view-demo-tickets" });
 
 const { t, date } = useAdminFormat();
@@ -33,6 +38,9 @@ const router = useRouter();
 const can = useAdminCan();
 useHead({ title: () => t("admin.nav.items.demoTickets") });
 const canManage = computed(() => can("manage-demo-tickets"));
+const view = ref<AdminListView>("table");
+// The Board lists by status, so it takes the search and the filters but not the page.
+const boardFilters = computed(() => ({ q: state.value.q, status: state.value.status, priority: state.value.priority, assignee: state.value.assignee }));
 
 // The URL is the single source of the list state; every change replaces the history entry.
 const state = computed(() => parseDemoTicketListUrl(route.query));
@@ -82,6 +90,12 @@ const dialogOpen = computed({
 });
 const openRow = (row: DemoTicketRow) => replaceState({ ...state.value, ticket: row.id });
 const closeDialog = () => (dialogOpen.value = false);
+
+// A Card's labelled values: the ones the Table shows besides the title, status and priority.
+const cardFacts = (ticket: DemoTicketRow): AdminCardFact[] => [
+  { label: t("admin.demoTickets.columns.assignee"), value: ticket.assignee ? personName(ticket.assignee) : t("admin.demoTickets.unassigned") },
+  { label: t("admin.demoTickets.columns.created"), value: date(ticket.createdAt) },
+];
 
 const columns = computed<ColumnDef<DataTableFeatures, DemoTicketRow>[]>(() => [
   {
@@ -140,16 +154,40 @@ const columns = computed<ColumnDef<DataTableFeatures, DemoTicketRow>[]>(() => [
             </SelectContent>
           </Select>
           <Button v-if="hasFilters" type="button" variant="ghost" @click="clearFilters">{{ t("admin.demoTickets.clearFilters") }}</Button>
+          <AdminViewSwitch v-model="view" :views="['table', 'cards', 'board']" />
         </div>
       </template>
     </AdminPageHeader>
 
-    <div v-if="list.isError.value && !list.data.value" role="alert" class="flex flex-col items-start gap-3 rounded-lg border p-4">
+    <DemoTicketBoard v-if="view === 'board'" :filters="boardFilters" :has-filters="hasFilters" :can-manage="canManage" @clear-filters="clearFilters" @open="openRow" />
+    <div v-else-if="list.isError.value && !list.data.value" role="alert" class="flex flex-col items-start gap-3 rounded-lg border p-4">
       <p class="text-sm font-medium">{{ t("admin.demoTickets.loadError") }}</p>
       <Button type="button" variant="outline" size="sm" @click="list.refetch()">{{ t("admin.shell.retry") }}</Button>
     </div>
     <div v-else-if="list.isPending.value" class="grid gap-2" data-slot="list-loading" aria-busy="true">
       <Skeleton v-for="n in 5" :key="n" class="h-14 w-full" />
+    </div>
+    <div v-else-if="view === 'cards'" :class="list.isPlaceholderData.value ? 'opacity-60' : undefined">
+      <AdminCardList :items="list.data.value?.items ?? []" :total="total" :page-size="ADMIN_PAGE_SIZE" layout="rows" :label="t('admin.nav.items.demoTickets')" :page="state.page" @update:page="(next: number) => replaceState({ ...state, page: next })">
+        <template #default="{ item }">
+          <AdminRowCard :title="item.title" :facts="cardFacts(item)">
+            <template #badges>
+              <DemoTicketStatusBadge :status="item.status" />
+              <Badge :variant="item.priority === 'high' ? 'default' : 'outline'" :data-priority="item.priority">{{ t(`admin.demoTickets.priorities.${item.priority}`) }}</Badge>
+              <DemoTicketWaitingChip :ticket="item" />
+            </template>
+            <template #actions>
+              <Button type="button" variant="outline" size="sm" :aria-label="t('admin.demoTickets.cards.openNamed', { title: item.title })" @click="openRow(item)">{{ t("admin.demoTickets.cards.open") }}</Button>
+            </template>
+          </AdminRowCard>
+        </template>
+        <template #empty>
+          <DataTableEmpty v-if="hasFilters" :title="t('admin.demoTickets.noResults.title')" :description="t('admin.demoTickets.noResults.description')">
+            <Button type="button" variant="outline" @click="clearFilters">{{ t("admin.demoTickets.clearFilters") }}</Button>
+          </DataTableEmpty>
+          <DataTableEmpty v-else :title="t('admin.demoTickets.empty.title')" :description="t('admin.demoTickets.empty.description')" />
+        </template>
+      </AdminCardList>
     </div>
     <div v-else class="overflow-x-auto" :class="list.isPlaceholderData.value ? 'opacity-60' : undefined">
       <DataTable

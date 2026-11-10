@@ -73,6 +73,21 @@
         "allPriorities": "All priorities",
         "allAssignees": "All assignees"
       },
+      "cards": {
+        "open": "Open",
+        "openNamed": "Open {title}"
+      },
+      "board": {
+        "label": "Demo tickets board",
+        "hint": "Drag a ticket's top bar to the next column, or use its button.",
+        "viewOnly": "You can follow the tickets but not move them.",
+        "moveTo": "Move to {status}",
+        "dragHandle": "Drag to {status}",
+        "moved": "“{title}” moved to {status}.",
+        "returned": "“{title}” stayed in {status}; the move did not go through.",
+        "stale": "This ticket changed. Here's its current status.",
+        "failed": "The ticket could not be moved."
+      },
       "noResults": {
         "title": "No demo tickets match",
         "description": "Try a different search or clear the filters."

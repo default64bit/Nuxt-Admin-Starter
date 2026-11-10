@@ -31,6 +31,20 @@
       "showing": "Showing {from}–{to} of {total}",
       "pagination": "Pagination"
     },
+    "listView": {
+      "label": "View",
+      "table": "Table",
+      "cards": "Cards",
+      "board": "Board"
+    },
+    "boardView": {
+      "previous": "Previous columns",
+      "next": "Next columns",
+      "dropHere": "Drop here",
+      "empty": "Nothing here",
+      "loadError": "This column could not be loaded.",
+      "showMore": "Show {count} more"
+    },
     "permissions": {
       "groups": {
         "users": {

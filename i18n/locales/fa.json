@@ -31,6 +31,20 @@
       "showing": "نمایش {from}–{to} از {total}",
       "pagination": "صفحه‌بندی"
     },
+    "listView": {
+      "label": "نمایش",
+      "table": "جدول",
+      "cards": "کارت‌ها",
+      "board": "تابلو"
+    },
+    "boardView": {
+      "previous": "ستون‌های قبلی",
+      "next": "ستون‌های بعدی",
+      "dropHere": "اینجا رها کنید",
+      "empty": "اینجا چیزی نیست",
+      "loadError": "این ستون بارگیری نشد.",
+      "showMore": "نمایش {count} مورد دیگر"
+    },
     "permissions": {
       "groups": {
         "users": {
