@@ -1,5 +1,8 @@
 CREATE TYPE "public"."audit_outcome" AS ENUM('success', 'denied', 'failed');--> statement-breakpoint
+CREATE TYPE "public"."locale" AS ENUM('fa', 'en');--> statement-breakpoint
+CREATE TYPE "public"."notification_channel" AS ENUM('telegram', 'push');--> statement-breakpoint
 CREATE TYPE "public"."otp_purpose" AS ENUM('login', 'phone_change');--> statement-breakpoint
+CREATE TYPE "public"."outbox_status" AS ENUM('queued', 'claimed', 'delivered', 'failed', 'skipped');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('active', 'disabled');--> statement-breakpoint
 CREATE TABLE "admin_audit_events" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
@@ -112,6 +115,82 @@ CREATE TABLE "dashboard_preferences" (
 	CONSTRAINT "dashboard_preferences_chart_style" CHECK ("dashboard_preferences"."chart_style" IN ('soft', 'glow', 'pro'))
 );
 --> statement-breakpoint
+CREATE TABLE "notification_channel_health" (
+	"channel" "notification_channel" PRIMARY KEY NOT NULL,
+	"status" text DEFAULT 'operational' NOT NULL,
+	"since" timestamp with time zone DEFAULT now() NOT NULL,
+	"consecutive_failures" integer DEFAULT 0 NOT NULL,
+	"last_failure_category" text,
+	"next_probe_at" timestamp with time zone,
+	CONSTRAINT "notification_channel_health_status" CHECK ("notification_channel_health"."status" IN ('operational', 'degraded')),
+	CONSTRAINT "notification_channel_health_failures_nonnegative" CHECK ("notification_channel_health"."consecutive_failures" >= 0)
+);
+--> statement-breakpoint
+CREATE TABLE "notification_channel_preferences" (
+	"user_id" uuid NOT NULL,
+	"channel" "notification_channel" NOT NULL,
+	"enabled" boolean NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_channel_preferences_user_id_channel_pk" PRIMARY KEY("user_id","channel")
+);
+--> statement-breakpoint
+CREATE TABLE "notification_outbox" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"dedupe_key" text NOT NULL,
+	"channel" "notification_channel" NOT NULL,
+	"event_key" text NOT NULL,
+	"locale" "locale",
+	"recipient" text,
+	"tokens" text[],
+	"source_entity_type" text NOT NULL,
+	"source_entity_id" text NOT NULL,
+	"notification_id" uuid,
+	"status" "outbox_status" DEFAULT 'queued' NOT NULL,
+	"attempt_count" smallint DEFAULT 0 NOT NULL,
+	"next_attempt_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"leased_until" timestamp with time zone,
+	"leased_by" text,
+	"recipient_user_id" uuid,
+	"delivered_at" timestamp with time zone,
+	"terminal_failed_at" timestamp with time zone,
+	"skipped_at" timestamp with time zone,
+	"last_failure_category" text,
+	"payload_purged_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_outbox_attempts_range" CHECK ("notification_outbox"."attempt_count" BETWEEN 0 AND 5),
+	CONSTRAINT "notification_outbox_token_limit" CHECK ("notification_outbox"."tokens" IS NULL OR cardinality("notification_outbox"."tokens") <= 3),
+	CONSTRAINT "notification_outbox_status_timestamps" CHECK (("notification_outbox"."status" = 'delivered') = ("notification_outbox"."delivered_at" IS NOT NULL)
+        AND ("notification_outbox"."status" = 'failed') = ("notification_outbox"."terminal_failed_at" IS NOT NULL)
+        AND ("notification_outbox"."status" = 'skipped') = ("notification_outbox"."skipped_at" IS NOT NULL))
+);
+--> statement-breakpoint
+CREATE TABLE "notification_reads" (
+	"notification_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"read_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "notification_reads_notification_id_user_id_pk" PRIMARY KEY("notification_id","user_id")
+);
+--> statement-breakpoint
+CREATE TABLE "notification_settings" (
+	"user_id" uuid PRIMARY KEY NOT NULL,
+	"message_locale" "locale" DEFAULT 'fa' NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "notifications" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"type" text NOT NULL,
+	"required_permission" text NOT NULL,
+	"recipient_user_id" uuid,
+	"source_entity_type" text NOT NULL,
+	"source_entity_id" text NOT NULL,
+	"tokens" text[],
+	"dedupe_key" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"resolved_at" timestamp with time zone,
+	CONSTRAINT "notifications_token_limit" CHECK ("notifications"."tokens" IS NULL OR cardinality("notifications"."tokens") <= 3)
+);
+--> statement-breakpoint
 ALTER TABLE "admin_audit_events" ADD CONSTRAINT "admin_audit_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp_challenges" ADD CONSTRAINT "otp_challenges_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -122,6 +201,14 @@ ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_users_id_fk" FOREIGN
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_assigned_by_users_id_fk" FOREIGN KEY ("assigned_by") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "dashboard_preferences" ADD CONSTRAINT "dashboard_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_channel_preferences" ADD CONSTRAINT "notification_channel_preferences_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_outbox" ADD CONSTRAINT "notification_outbox_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_outbox" ADD CONSTRAINT "notification_outbox_recipient_user_id_users_id_fk" FOREIGN KEY ("recipient_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_reads" ADD CONSTRAINT "notification_reads_notification_id_notifications_id_fk" FOREIGN KEY ("notification_id") REFERENCES "public"."notifications"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_reads" ADD CONSTRAINT "notification_reads_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notification_settings" ADD CONSTRAINT "notification_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_required_permission_permissions_key_fk" FOREIGN KEY ("required_permission") REFERENCES "public"."permissions"("key") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_user_id_users_id_fk" FOREIGN KEY ("recipient_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "admin_audit_events_time_idx" ON "admin_audit_events" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_entity_idx" ON "admin_audit_events" USING btree ("entity_type","entity_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_actor_idx" ON "admin_audit_events" USING btree ("actor_user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -137,7 +224,14 @@ CREATE UNIQUE INDEX "roles_single_super_unique" ON "roles" USING btree ("is_supe
 CREATE INDEX "user_roles_role_idx" ON "user_roles" USING btree ("role_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "users_phone_e164_unique" ON "users" USING btree ("phone_e164");--> statement-breakpoint
 CREATE INDEX "users_created_idx" ON "users" USING btree ("created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
-CREATE UNIQUE INDEX "users_single_default_admin_unique" ON "users" USING btree ("is_default_admin") WHERE "users"."is_default_admin";
+CREATE UNIQUE INDEX "users_single_default_admin_unique" ON "users" USING btree ("is_default_admin") WHERE "users"."is_default_admin";--> statement-breakpoint
+CREATE UNIQUE INDEX "notification_outbox_dedupe_key_unique" ON "notification_outbox" USING btree ("dedupe_key");--> statement-breakpoint
+CREATE INDEX "notification_outbox_due_idx" ON "notification_outbox" USING btree ("next_attempt_at") WHERE "notification_outbox"."status" IN ('queued', 'claimed');--> statement-breakpoint
+CREATE INDEX "notification_outbox_retention_idx" ON "notification_outbox" USING btree ("status","delivered_at","terminal_failed_at","skipped_at");--> statement-breakpoint
+CREATE INDEX "notification_outbox_recipient_user_idx" ON "notification_outbox" USING btree ("recipient_user_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "notifications_dedupe_key_unique" ON "notifications" USING btree ("dedupe_key");--> statement-breakpoint
+CREATE INDEX "notifications_unresolved_idx" ON "notifications" USING btree ("required_permission","created_at" DESC NULLS LAST) WHERE "notifications"."resolved_at" IS NULL;--> statement-breakpoint
+CREATE INDEX "notifications_source_idx" ON "notifications" USING btree ("source_entity_type","source_entity_id");
 --> statement-breakpoint
 -- hand-written-sql:start
 -- Drizzle cannot generate triggers or functions. After regenerating this baseline from the schema, re-append this

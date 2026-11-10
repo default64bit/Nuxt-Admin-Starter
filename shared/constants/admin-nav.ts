@@ -26,11 +26,13 @@ export interface AdminNavItem {
   path: string;
   /** The one catalogue key that lets a User open the page; null only for the Dashboard, which has no page key. */
   permission: PermissionKey | null;
+  /** The key of the nav-counts answer (`shared/schemas/admin-nav-counts.ts`) this item shows as a badge; none for no badge. */
+  countKey?: string;
 }
 
 const camel = (value: string) => value.replace(/-(\w)/g, (_, char: string) => char.toUpperCase());
 
-const item = (key: string, group: AdminNavGroup, order: number, permission: PermissionKey | null, segment = key): AdminNavItem => ({
+const item = (key: string, group: AdminNavGroup, order: number, permission: PermissionKey | null, segment = key, countKey?: string): AdminNavItem => ({
   key,
   group,
   order,
@@ -38,6 +40,7 @@ const item = (key: string, group: AdminNavGroup, order: number, permission: Perm
   routeName: segment ? `admin-${segment}` : "admin",
   path: segment ? `/admin/${segment}` : "/admin",
   permission,
+  ...(countKey ? { countKey } : {}),
 });
 
 export const ADMIN_NAV: readonly AdminNavItem[] = [
@@ -46,7 +49,7 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   item("roles", "people", 1, "view-roles"),
   item("audit-log", "system", 0, "view-audit-log"),
   // demo-ticket:start
-  item("demo-tickets", "work", 0, "view-demo-tickets"),
+  item("demo-tickets", "work", 0, "view-demo-tickets", "demo-tickets", "openDemoTickets"),
   // demo-ticket:end
 ];
 
@@ -63,6 +66,7 @@ export interface AdminUserMenuLink {
 }
 export const ADMIN_USER_MENU_LINKS: readonly AdminUserMenuLink[] = [
   { key: "my-account", labelKey: "admin.account.menuLabel", routeName: "admin-account", path: "/admin/account" },
+  { key: "notification-settings", labelKey: "admin.account.notifications.menuLabel", routeName: "admin-account-notifications", path: "/admin/account/notifications" },
 ];
 
 /** The tint hue (HSL degrees) of each section's page-title tile, keyed by nav item key. */

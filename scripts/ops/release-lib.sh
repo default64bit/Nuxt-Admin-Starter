@@ -17,7 +17,7 @@ rl_profile_on() { case ",${COMPOSE_PROFILES:-}," in *",$1,"*) return 0 ;; *) ret
 # Services that run an image of the release and are switched with it. Add a service here (and to `revert_services`) when
 # it runs the app or tools image, such as a background worker. The edge proxy is switched with the release too, but is
 # never reverted: its pinned base image is not tied to a release.
-revert_services="app"
+revert_services="app notification-worker"
 if [ -n "${DEPLOY_SERVICES:-}" ]; then
   release_services="${DEPLOY_SERVICES}"
 elif rl_profile_on edge; then

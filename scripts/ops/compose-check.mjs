@@ -15,7 +15,7 @@ const PIECE_SERVICES = {
   backup: ["backup"],
 };
 // Services that must always run, whichever Optional pieces are switched off.
-const coreServices = ["postgres", "app"];
+const coreServices = ["postgres", "app", "notification-worker"];
 // Images the dev overlay builds locally: the Node dev image and the backup job image (nuxt-admin-starter-dev-backup).
 const DEV_IMAGE = "nuxt-admin-starter-dev";
 const GHCR_PREFIX = "ghcr.io/default64bit/nuxt-admin-starter/";

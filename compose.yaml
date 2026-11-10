@@ -70,6 +70,27 @@ services:
     networks: [backend]
     logging: *logging
 
+  # The notification worker (core, no profile; ADR-0021): delivers outbox rows to the Channels after the business
+  # transaction committed. With no Channel configured it only keeps the outbox tidy. The app never waits for it.
+  notification-worker:
+    restart: unless-stopped
+    command: [corepack, pnpm, "worker:notifications"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
+      WORKER_HEARTBEAT_FILE: /tmp/worker-heartbeat
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "test $$(( $$(date +%s) - $$(stat -c %Y /tmp/worker-heartbeat) )) -lt 60"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks: [backend]
+    logging: *logging
+
   # One-shot jobs (`just db-*`): run from the dev image locally and from the tools image in production.
   db-ensure:
     profiles: [ops]

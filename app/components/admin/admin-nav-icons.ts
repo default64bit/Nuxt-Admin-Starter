@@ -1,4 +1,4 @@
-import { IconHistory, IconLayoutDashboard, IconShieldLock, IconUserCircle, IconUsers } from "@tabler/icons-vue";
+import { IconBell, IconHistory, IconLayoutDashboard, IconShieldLock, IconUserCircle, IconUsers } from "@tabler/icons-vue";
 import type { Component } from "vue";
 // demo-ticket:start
 import { DEMO_TICKET_NAV_ICON } from "~/components/demo-ticket/demo-ticket-nav-icon";
@@ -24,5 +24,6 @@ export const ADMIN_NAV_ICONS: Record<string, Component> = {
 /** Tabler icon per user-menu link key (`ADMIN_USER_MENU_LINKS`); a link without one gets the generic account icon. */
 export const ADMIN_USER_MENU_ICONS: Record<string, Component> = {
   "my-account": IconUserCircle,
+  "notification-settings": IconBell,
 };
 export const DEFAULT_USER_MENU_ICON: Component = IconUserCircle;

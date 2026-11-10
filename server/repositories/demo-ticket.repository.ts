@@ -108,17 +108,24 @@ export async function insertTicket(
   return row!.id;
 }
 
-/** Writes the changed columns and moves the version; a status change also moves `statusSince`. */
+/** Tickets still waiting for work (open or in progress): the Demo tickets menu badge. */
+export async function countOpenTickets(db: Executor): Promise<number> {
+  const [row] = await db.select({ n: sql<number>`count(*)::int` }).from(demoTickets).where(inArray(demoTickets.status, ["open", "in_progress"]));
+  return row?.n ?? 0;
+}
+
+/** Writes the changed columns and moves the version (returned); a status change also moves `statusSince`. */
 export async function updateTicket(
   tx: Executor,
   id: string,
   values: Partial<{ title: string; description: string | null; priority: DemoTicketPriority; assigneeId: string | null; status: DemoTicketStatus }>,
-) {
+): Promise<Date> {
   const now = new Date();
   await tx
     .update(demoTickets)
     .set({ ...values, updatedAt: now, ...(values.status ? { statusSince: now } : {}) })
     .where(eq(demoTickets.id, id));
+  return now;
 }
 
 export async function deleteTicketRow(tx: Executor, id: string) {

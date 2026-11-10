@@ -20,6 +20,7 @@ services:
       DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
     healthcheck:
       start_period: 120s
+  notification-worker: *dev-node
   db-ensure: *dev-node
   migrate: *dev-node
   seed: *dev-node

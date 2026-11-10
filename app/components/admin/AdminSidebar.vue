@@ -8,15 +8,21 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAdminNav } from "~/composables/admin/useAdminNav";
+import { useAdminNavCounts } from "~/composables/admin/useAdminNavCounts";
+import { formatNavCount } from "~~/shared/schemas/admin-nav-counts";
 import { ADMIN_NAV_ICONS } from "./admin-nav-icons";
 
 // The menu is the typed config filtered by the User's Permissions and by which pages exist. Groups with no visible
 // item are not rendered (no empty headings), so a User holding no page Permission sees the Dashboard only.
-const { t } = useI18n();
+const { t, locale } = useI18n();
+// Queue badges come from the shared nav-counts query (a count is present only for a page the User may open).
+const { counts } = useAdminNavCounts(computed(() => true));
+const badgeOf = (countKey: string | undefined) => (countKey ? formatNavCount((counts.value as Record<string, number | undefined>)[countKey], locale.value === "en" ? "en" : "fa") : null);
 const { groups, current, hrefFor } = useAdminNav();
 const appName = computed(() => t("app.name"));
 const monogram = computed(() => Array.from(appName.value)[0] ?? "");
@@ -42,6 +48,7 @@ const monogram = computed(() => Array.from(appName.value)[0] ?? "");
                     <span>{{ t(item.labelKey) }}</span>
                   </NuxtLink>
                 </SidebarMenuButton>
+                <SidebarMenuBadge v-if="badgeOf(item.countKey)" data-slot="nav-badge" :data-count-key="item.countKey">{{ badgeOf(item.countKey) }}</SidebarMenuBadge>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

@@ -35,6 +35,10 @@ export const ADMIN_OPERATIONS: Record<string, AdminOperation> = {
 // The signed-in User's own display preferences (Dashboard layout, ranges, Chart style). They need no Permission, so they
 // are never refused, and they are not audited. Mutating admin routes listed here need no ADMIN_OPERATIONS row.
 export const ADMIN_PREFERENCE_ROUTES: readonly string[] = [
+  "PUT account/notification-settings",
+  "POST notifications/:id/read",
+  "DELETE notifications/:id/read",
+  "POST notifications/read-all",
   "PUT account/dashboard/arrangement",
   "DELETE account/dashboard/arrangement",
   "PUT account/dashboard/chart-style",

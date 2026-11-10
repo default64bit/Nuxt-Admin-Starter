@@ -24,6 +24,7 @@
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx server/database/seed.ts",
+    "worker:notifications": "tsx server/workers/notification-worker.ts",
     "monitoring:db:ensure": "node scripts/db/ensure-monitoring-database.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },

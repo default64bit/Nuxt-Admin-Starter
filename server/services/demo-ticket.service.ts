@@ -8,6 +8,7 @@ import * as repository from "../repositories/demo-ticket.repository";
 import { containsPattern } from "../repositories/name-search";
 import { DomainError, invalidTransition, staleVersion, validationFailed } from "../utils/domain-errors";
 import { recordAudit, type AuditContext } from "./admin-audit.service";
+import { recordNotificationEvent, resolveAttentionForSource } from "./notification-events.service";
 import type { AdminActor } from "./authorization";
 
 export interface DemoTicketDeps {
@@ -21,6 +22,9 @@ const ASSIGNEE_OPTIONS_LIMIT = 200;
 
 /** The audit context of a write: who acted, and the request it came in on. */
 const auditOf = (actor: DemoTicketActor): AuditContext => ({ actorUserId: actor.userId, correlationId: actor.requestId });
+
+/** The "assigned to you" Notification closes with the ticket's open work. */
+const resolveAssignment = (tx: Tx, ticketId: string) => resolveAttentionForSource(tx, "demo_ticket.assigned", "demo_ticket", ticketId);
 
 const notFound = () => new DomainError(404, "Not Found", "not_found");
 
@@ -88,6 +92,9 @@ export async function createDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
       entityId: created,
       changeSummary: { title: body.title, priority: body.priority, assignee: body.assigneeId ?? null },
     });
+    if (body.assigneeId && body.assigneeId !== actor.userId) {
+      await recordNotificationEvent(tx, { type: "demo_ticket.assigned", ids: { ticketId: created, assignedAt: new Date().toISOString() }, tokens: { priority: body.priority }, recipientUserId: body.assigneeId });
+    }
     return created;
   });
   return detailOf(deps.db, id);
@@ -131,7 +138,23 @@ export async function updateDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
     if (statusChanged) fields.status = body.status!;
 
     if (Object.keys(fields).length === 0) return;
-    await repository.updateTicket(tx, id, fields);
+    const savedAt = await repository.updateTicket(tx, id, fields);
+    // The assignment Notification: raised for a new assignee other than the actor, never on self-assign, one per
+    // assignment (the dedupe key carries the time). Closed when the ticket is reassigned (to anybody, or nobody),
+    // resolved or closed, in this same transaction.
+    const nextStatus = fields.status ?? current.status;
+    const ended = nextStatus === "resolved" || nextStatus === "closed";
+    const reassigned = fields.assigneeId !== undefined;
+    if (reassigned || ended) await resolveAssignment(tx, id);
+    const nextAssignee = reassigned ? fields.assigneeId : current.assigneeId;
+    if (reassigned && nextAssignee && nextAssignee !== actor.userId && !ended) {
+      await recordNotificationEvent(tx, {
+        type: "demo_ticket.assigned",
+        ids: { ticketId: id, assignedAt: savedAt.toISOString() },
+        tokens: { priority: fields.priority ?? current.priority },
+        recipientUserId: nextAssignee,
+      });
+    }
     if (Object.keys(old).length > 0 || descriptionChanged) {
       await recordAudit(tx, auditOf(actor), {
         action: "demo_ticket.updated",
@@ -157,6 +180,7 @@ export async function deleteDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
   await deps.db.transaction(async (tx) => {
     const current = await repository.lockTicket(tx, id);
     if (!current) throw notFound();
+    await resolveAssignment(tx, id);
     await repository.deleteTicketRow(tx, id);
     await recordAudit(tx, auditOf(actor), {
       action: "demo_ticket.deleted",

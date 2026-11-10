@@ -54,3 +54,8 @@ key from this list when it is approved.
 
 - every key in `i18n/locales/demo-ticket.fa.json`
 <!-- demo-ticket:end -->
+
+## Notifications and Inbox
+
+- every key under `admin.notifications` and `admin.account.notifications`
+- the `fa` copy and titles of every entry in `shared/constants/notification-catalog.ts` and the priority labels in `shared/utils/attention-message.ts`

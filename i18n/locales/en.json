@@ -460,6 +460,51 @@
           "body": "Use a different number."
         },
         "success": "Your phone number was changed."
+      },
+      "notifications": {
+        "title": "Notification settings",
+        "menuLabel": "Notification settings",
+        "inboxNote": "Every notification reaches your Inbox. Channels below also send it away from the panel.",
+        "account": {
+          "title": "Your account",
+          "help": "These choices follow you to every browser."
+        },
+        "loadError": "Your notification settings could not be loaded.",
+        "badge": {
+          "connected": "Connected",
+          "notConnected": "Not connected",
+          "unavailable": "Unavailable",
+          "degraded": "Paused"
+        },
+        "unavailable": "This channel is not available right now.",
+        "degraded": "This channel is paused since {time} after repeated failures.",
+        "notConnected": "Connect this channel to receive notifications on it.",
+        "connect": "Connect",
+        "channels": {
+          "telegram": "Telegram",
+          "push": "Browser push"
+        },
+        "send": {
+          "telegram": "Send notifications on Telegram",
+          "push": "Send browser push notifications"
+        },
+        "language": {
+          "title": "Message language",
+          "help": "The language of messages sent through channels."
+        },
+        "save": "Save",
+        "saving": "Saving",
+        "saved": "Notification settings saved.",
+        "saveFailed": "Your settings could not be saved.",
+        "device": {
+          "title": "This device",
+          "help": "Applies to this browser only and takes effect at once.",
+          "sound": {
+            "title": "Sound",
+            "help": "A short chime when a new notification arrives while the panel is open.",
+            "label": "Play a sound on this device"
+          }
+        }
       }
     },
     "strip": {
@@ -576,6 +621,37 @@
         "stage": "Stage {n}",
         "figure": "Figure",
         "rate": "Rate {n}"
+      }
+    },
+    "notifications": {
+      "title": "Inbox",
+      "bell": "Inbox",
+      "bellUnread": "Inbox, {count} unread",
+      "markAllRead": "Mark all as read",
+      "settingsLink": "Notification settings",
+      "tabsLabel": "Inbox view",
+      "tabs": {
+        "unread": "Unread",
+        "read": "Read",
+        "all": "All"
+      },
+      "popoverError": "The Inbox could not be loaded.",
+      "popoverEmpty": "Nothing unread.",
+      "popoverEmptyRead": "No read items yet.",
+      "viewAll": "View all",
+      "done": "Done",
+      "open": "Open",
+      "unreadDot": "Unread",
+      "actions": "Actions for: {title}",
+      "markUnread": "Mark as unread",
+      "markRead": "Mark as read",
+      "typeLabel": "Type",
+      "allTypes": "All types",
+      "loadError": "The Inbox could not be loaded.",
+      "emptyUnread": "You're all caught up.",
+      "emptyAll": "No notifications yet.",
+      "live": {
+        "summary": "{n} new notifications"
       }
     }
   },
