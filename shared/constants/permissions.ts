@@ -14,6 +14,11 @@ export const PERMISSION_KEYS = [
   "manage-roles",
   // Audit
   "view-audit-log",
+  // demo-ticket:start
+  // Demo tickets
+  "view-demo-tickets",
+  "manage-demo-tickets",
+  // demo-ticket:end
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];

@@ -2,10 +2,11 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { loadLocaleMessages } from "../support/locale-messages";
 
 const root = join(__dirname, "../../..");
-const load = (name: string) =>
-  JSON.parse(readFileSync(join(root, "i18n/locales", `${name}.json`), "utf8")) as Record<string, unknown>;
+// The messages as the app loads them: the locale file plus its feature files (`<feature>.<code>.json`).
+const load = (name: string) => loadLocaleMessages(name);
 
 function flatten(tree: Record<string, unknown>, prefix = ""): Map<string, string> {
   const result = new Map<string, string>();

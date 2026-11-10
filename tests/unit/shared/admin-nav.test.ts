@@ -1,19 +1,24 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { loadLocaleMessages } from "../support/locale-messages";
 import { ADMIN_NAV, ADMIN_NAV_GROUPS, ADMIN_NAV_HUES, ADMIN_USER_MENU_LINKS, DEFAULT_ADMIN_HUE, adminHue } from "~~/shared/constants/admin-nav";
 import { PERMISSION_KEYS } from "~~/shared/constants/permissions";
 import { currentNavItem, navCrumbKeys, visibleNavGroups } from "~~/shared/utils/admin-nav";
 
-const root = join(__dirname, "../../..");
-const locale = (name: string) => JSON.parse(readFileSync(join(root, "i18n/locales", `${name}.json`), "utf8")) as Record<string, unknown>;
+const locale = (name: string) => loadLocaleMessages(name);
 const lookup = (tree: Record<string, unknown>, key: string) => key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], tree);
 
 describe("admin nav config", () => {
   it("declares the Dashboard (no page key) plus one gated destination per page key", () => {
     expect(ADMIN_NAV.filter((item) => item.permission === null).map((item) => item.key)).toEqual(["dashboard"]);
-    expect(ADMIN_NAV.map((item) => item.permission).filter(Boolean)).toEqual(["view-users", "view-roles", "view-audit-log"]);
+    expect(ADMIN_NAV.map((item) => item.permission).filter(Boolean)).toEqual([
+      "view-users",
+      "view-roles",
+      "view-audit-log",
+      // demo-ticket:start
+      "view-demo-tickets",
+      // demo-ticket:end
+    ]);
   });
 
   it("has unique keys, routes and paths", () => {
@@ -49,7 +54,15 @@ describe("admin nav config", () => {
 
 describe("section hues", () => {
   it("gives the shipped sections their hues", () => {
-    expect(ADMIN_NAV_HUES).toEqual({ dashboard: 200, users: 260, roles: 285, "audit-log": 350 });
+    expect(ADMIN_NAV_HUES).toEqual({
+      dashboard: 200,
+      users: 260,
+      roles: 285,
+      "audit-log": 350,
+      // demo-ticket:start
+      "demo-tickets": 45,
+      // demo-ticket:end
+    });
     expect(adminHue("roles")).toBe(285);
   });
 
@@ -82,7 +95,15 @@ describe("visibleNavGroups", () => {
   it("orders groups and items by the config", () => {
     const groups = visibleNavGroups(ADMIN_NAV, { permissions: [...PERMISSION_KEYS], availableRoutes: all });
     expect(groups.map((group) => group.group)).toEqual([...ADMIN_NAV_GROUPS]);
-    expect(names(groups)).toEqual(["dashboard", "users", "roles", "audit-log"]);
+    expect(names(groups)).toEqual([
+      "dashboard",
+      // demo-ticket:start
+      "demo-tickets",
+      // demo-ticket:end
+      "users",
+      "roles",
+      "audit-log",
+    ]);
   });
 });
 

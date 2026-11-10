@@ -25,6 +25,11 @@ export const ADMIN_OPERATIONS: Record<string, AdminOperation> = {
   "PUT users/:id/roles": op("user.roles", "user", "id"),
   "POST users/:id/disable": op("user.disable", "user", "id"),
   "POST users/:id/enable": op("user.enable", "user", "id"),
+  // demo-ticket:start
+  "POST demo-tickets": op("demo_ticket.created", "demo_ticket"),
+  "PATCH demo-tickets/:id": op("demo_ticket.updated", "demo_ticket", "id"),
+  "DELETE demo-tickets/:id": op("demo_ticket.deleted", "demo_ticket", "id"),
+  // demo-ticket:end
 };
 
 export interface MatchedOperation {

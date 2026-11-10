@@ -44,3 +44,7 @@ key from this list when it is approved.
 ## Analytics strip
 
 - every key under `admin.strip`
+
+## Demo tickets
+
+- every key in `i18n/locales/demo-ticket.fa.json`

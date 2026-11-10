@@ -1,7 +1,6 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { loadLocaleMessages } from "../support/locale-messages";
 import {
   PERMISSION_GROUP_IDS,
   PERMISSION_GROUP_OF,
@@ -15,8 +14,7 @@ import {
 import { PERMISSION_KEYS, type PermissionKey } from "~~/shared/constants/permissions";
 import { allowGroup, clearGroup, missingPrerequisites, neededBy, prerequisiteClosure, withPrerequisites } from "~~/shared/utils/permission-prerequisites";
 
-const root = join(__dirname, "../../..");
-const locale = (name: string) => JSON.parse(readFileSync(join(root, "i18n/locales", `${name}.json`), "utf8")) as Record<string, unknown>;
+const locale = (name: string) => loadLocaleMessages(name);
 const lookup = (tree: Record<string, unknown>, key: string) => key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], tree);
 const keys = (...list: PermissionKey[]) => new Set(list);
 const sorted = (list: Iterable<string>) => [...list].sort();
@@ -24,9 +22,16 @@ const sorted = (list: Iterable<string>) => [...list].sort();
 // The completeness contract: a Permission is never half-added. Adding a key to PERMISSION_KEYS fails these tests
 // until it also has a group, a prerequisite entry and an fa/en label and hint.
 describe("Permission catalogue completeness", () => {
-  it("has 7 core keys in 3 groups, each key in exactly one group", () => {
-    expect(PERMISSION_KEYS).toHaveLength(7);
-    expect(sorted(PERMISSION_GROUP_IDS)).toEqual(["audit", "roles", "users"]);
+  it("has 7 core keys, and every key (the demo's included) is in exactly one group", () => {
+    expect(PERMISSION_KEYS.filter((key) => !key.includes("demo-ticket"))).toHaveLength(7);
+    expect(sorted(PERMISSION_GROUP_IDS)).toEqual([
+      "audit",
+      // demo-ticket:start
+      "demoTickets",
+      // demo-ticket:end
+      "roles",
+      "users",
+    ]);
     expect(PERMISSION_GROUPS.map((group) => group.id)).toEqual([...PERMISSION_GROUP_IDS]);
     const grouped = PERMISSION_GROUPS.flatMap((group) => group.keys);
     expect(new Set(grouped).size).toBe(grouped.length);

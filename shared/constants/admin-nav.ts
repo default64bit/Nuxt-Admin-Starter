@@ -5,7 +5,14 @@ import type { PermissionKey } from "./permissions";
 // in both locales, and a page at the declared route name. The menu shows an item only when the page exists and the
 // User holds its Permission.
 
-export const ADMIN_NAV_GROUPS = ["dashboard", "people", "system"] as const;
+export const ADMIN_NAV_GROUPS = [
+  "dashboard",
+  // demo-ticket:start
+  "work",
+  // demo-ticket:end
+  "people",
+  "system",
+] as const;
 export type AdminNavGroup = (typeof ADMIN_NAV_GROUPS)[number];
 
 export interface AdminNavItem {
@@ -38,6 +45,9 @@ export const ADMIN_NAV: readonly AdminNavItem[] = [
   item("users", "people", 0, "view-users"),
   item("roles", "people", 1, "view-roles"),
   item("audit-log", "system", 0, "view-audit-log"),
+  // demo-ticket:start
+  item("demo-tickets", "work", 0, "view-demo-tickets"),
+  // demo-ticket:end
 ];
 
 /**
@@ -61,6 +71,9 @@ export const ADMIN_NAV_HUES: Readonly<Record<string, number>> = {
   users: 260,
   roles: 285,
   "audit-log": 350,
+  // demo-ticket:start
+  "demo-tickets": 45,
+  // demo-ticket:end
 };
 /** A section without a hue of its own. */
 export const DEFAULT_ADMIN_HUE = 238;

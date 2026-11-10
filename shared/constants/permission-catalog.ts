@@ -4,7 +4,14 @@ import type { PermissionKey } from "./permissions";
 // needs. The role editor and the server both read this map, so both enforce the same prerequisites.
 // Labels and hints live in i18n under `admin.permissions.*`.
 
-export const PERMISSION_GROUP_IDS = ["users", "roles", "audit"] as const;
+export const PERMISSION_GROUP_IDS = [
+  "users",
+  "roles",
+  "audit",
+  // demo-ticket:start
+  "demoTickets",
+  // demo-ticket:end
+] as const;
 export type PermissionGroupId = (typeof PERMISSION_GROUP_IDS)[number];
 
 /** The groups in editor order, each with its keys in display order. */
@@ -12,6 +19,9 @@ export const PERMISSION_GROUPS: readonly { id: PermissionGroupId; keys: readonly
   { id: "users", keys: ["view-users", "create-users", "edit-users", "disable-users"] },
   { id: "roles", keys: ["view-roles", "manage-roles"] },
   { id: "audit", keys: ["view-audit-log"] },
+  // demo-ticket:start
+  { id: "demoTickets", keys: ["view-demo-tickets", "manage-demo-tickets"] },
+  // demo-ticket:end
 ];
 
 /** The group a key belongs to. */
@@ -33,6 +43,10 @@ export const PERMISSION_PREREQUISITES: Readonly<Record<PermissionKey, readonly P
   "view-roles": [],
   "manage-roles": ["view-roles"],
   "view-audit-log": [],
+  // demo-ticket:start
+  "view-demo-tickets": [],
+  "manage-demo-tickets": ["view-demo-tickets"],
+  // demo-ticket:end
 };
 
 const camel = (value: string) => value.replace(/-(\w)/g, (_, char: string) => char.toUpperCase());

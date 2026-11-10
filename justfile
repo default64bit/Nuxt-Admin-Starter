@@ -129,6 +129,13 @@ db-migrate:
 db-seed:
     docker compose run --rm seed
 
+# demo-ticket:start
+# Dev only (NUXT_APP_ENV=local, dev stack): about 40 demo tickets and 3 dev Users holding `super`, only into an empty table. Run after `just db-prepare`.
+db-seed-dev:
+    @if [ "${NUXT_APP_ENV:-}" != "local" ] || [ "{{stack}}" != "dev" ]; then echo "Refusing db-seed-dev unless NUXT_APP_ENV=local is set explicitly and the dev stack is selected"; exit 1; fi
+    docker compose run --rm -e NUXT_APP_ENV=local seed corepack pnpm exec tsx scripts/db/demo-ticket-dev-seed.ts
+# demo-ticket:end
+
 # Idempotent bootstrap: start PostgreSQL, ensure the database exists, apply migrations, seed.
 db-prepare:
     just services-up

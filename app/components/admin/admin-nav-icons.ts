@@ -1,5 +1,8 @@
 import { IconHistory, IconLayoutDashboard, IconShieldLock, IconUserCircle, IconUsers } from "@tabler/icons-vue";
 import type { Component } from "vue";
+// demo-ticket:start
+import { DEMO_TICKET_NAV_ICON } from "~/components/demo-ticket/demo-ticket-nav-icon";
+// demo-ticket:end
 
 /**
  * The soft translucent background of a section's tint, in the hue `--admin-hue` (set inline from `adminHue()` in
@@ -13,6 +16,9 @@ export const ADMIN_NAV_ICONS: Record<string, Component> = {
   users: IconUsers,
   roles: IconShieldLock,
   "audit-log": IconHistory,
+  // demo-ticket:start
+  "demo-tickets": DEMO_TICKET_NAV_ICON,
+  // demo-ticket:end
 };
 
 /** Tabler icon per user-menu link key (`ADMIN_USER_MENU_LINKS`); a link without one gets the generic account icon. */

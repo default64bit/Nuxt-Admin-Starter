@@ -5,6 +5,14 @@ exactly the same keys; `tests/unit/i18n/messages.test.ts` fails on any differenc
 values, and on a `t('…')` call in `app/` whose key is missing. There is no cross-language
 fallback (`fallbackLocale: false`): a missing key renders the key, never the other language.
 
+## Feature message files
+
+A removable feature keeps its strings in `locales/<feature>.en.json` and `locales/<feature>.fa.json` (for
+example `demo-ticket.en.json`), written with the full key paths (`admin.nav.items.demoTickets`). They are merged
+over `en.json` / `fa.json` when the app loads (`localeFiles` in `nuxt.config.ts`) and by the tests
+(`tests/unit/support/locale-messages.ts`), so the same-keys rule above holds for the merged result. JSON cannot
+hold the `demo-ticket:start` / `demo-ticket:end` markers, so deleting the pair is how the strings are removed.
+
 ## Key convention
 
 `<area>.<element>.<property>`, every segment lowerCamelCase, nested objects (no dotted keys).

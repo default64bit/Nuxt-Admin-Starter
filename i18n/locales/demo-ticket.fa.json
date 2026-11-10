@@ -1,0 +1,134 @@
+{
+  "admin": {
+    "nav": {
+      "groups": { "work": "کار" },
+      "items": { "demoTickets": "تیکت‌های نمونه" }
+    },
+    "permissions": {
+      "groups": {
+        "demoTickets": {
+          "label": "تیکت‌های نمونه",
+          "hint": "تیکت‌های نمونهٔ ماژول مرجع."
+        }
+      },
+      "keys": {
+        "viewDemoTickets": {
+          "label": "مشاهدهٔ تیکت‌های نمونه",
+          "hint": "باز کردن فهرست تیکت‌های نمونه و پنجرهٔ هر تیکت."
+        },
+        "manageDemoTickets": {
+          "label": "مدیریت تیکت‌های نمونه",
+          "hint": "ساخت، ویرایش، پیش بردن وضعیت و حذف تیکت‌های نمونه."
+        }
+      }
+    },
+    "auditLog": {
+      "groups": { "demoTickets": "تیکت‌های نمونه" },
+      "actions": {
+        "demoTicketCreated": "تیکت نمونه ساخته شد",
+        "demoTicketUpdated": "تیکت نمونه ویرایش شد",
+        "demoTicketStatusChanged": "وضعیت تیکت نمونه تغییر کرد",
+        "demoTicketDeleted": "تیکت نمونه حذف شد"
+      },
+      "fields": {
+        "title": "عنوان",
+        "priority": "اولویت",
+        "assignee": "مسئول",
+        "descriptionChanged": "توضیحات تغییر کرد"
+      }
+    },
+    "demoTickets": {
+      "newButton": "تیکت نمونهٔ جدید",
+      "searchLabel": "جست‌وجوی تیکت‌های نمونه",
+      "searchPlaceholder": "جست‌وجو بر اساس عنوان",
+      "clearFilters": "پاک کردن فیلترها",
+      "loadError": "بارگیری تیکت‌های نمونه ممکن نشد.",
+      "unassigned": "بدون مسئول",
+      "unnamedUser": "کاربر بدون نام",
+      "waitingLong": "منتظر مانده",
+      "waitingLongHint": "بیش از ۲۴ ساعت باز یا بیش از ۴۸ ساعت در حال انجام.",
+      "columns": {
+        "title": "عنوان",
+        "status": "وضعیت",
+        "priority": "اولویت",
+        "assignee": "مسئول",
+        "created": "ساخته شده"
+      },
+      "statuses": {
+        "open": "باز",
+        "inProgress": "در حال انجام",
+        "resolved": "حل‌شده",
+        "closed": "بسته"
+      },
+      "priorities": {
+        "low": "کم",
+        "normal": "عادی",
+        "high": "زیاد"
+      },
+      "filters": {
+        "status": "وضعیت",
+        "priority": "اولویت",
+        "assignee": "مسئول",
+        "allStatuses": "همهٔ وضعیت‌ها",
+        "allPriorities": "همهٔ اولویت‌ها",
+        "allAssignees": "همهٔ مسئولان"
+      },
+      "noResults": {
+        "title": "تیکت نمونه‌ای پیدا نشد",
+        "description": "جست‌وجوی دیگری را امتحان کنید یا فیلترها را پاک کنید."
+      },
+      "empty": {
+        "title": "هنوز تیکت نمونه‌ای نیست",
+        "description": "تیکت‌های نمونهٔ ساخته‌شده از جدیدترین به قدیمی‌ترین اینجا نمایش داده می‌شوند."
+      },
+      "fields": {
+        "title": "عنوان",
+        "description": "توضیحات",
+        "priority": "اولویت",
+        "assignee": "مسئول",
+        "status": "وضعیت",
+        "createdBy": "سازنده"
+      },
+      "dialog": {
+        "createTitle": "تیکت نمونهٔ جدید",
+        "createDescription": "تیکت جدید با وضعیت «باز» شروع می‌شود.",
+        "editTitle": "ویرایش تیکت نمونه",
+        "editDescription": "تیکت فقط به جلو می‌رود: باز، در حال انجام، حل‌شده، بسته.",
+        "viewTitle": "تیکت نمونه",
+        "viewDescription": "شما می‌توانید تیکت‌های نمونه را ببینید اما تغییر نمی‌دهید.",
+        "create": "ساخت تیکت",
+        "save": "ذخیرهٔ تغییرات",
+        "cancel": "انصراف",
+        "close": "بستن",
+        "loading": "در حال بارگیری تیکت",
+        "statusHint": "تیکت فقط به وضعیت بعدی می‌رود.",
+        "statusFinal": "تیکت بسته جلوتر نمی‌رود.",
+        "loadError": "بارگیری این تیکت نمونه ممکن نشد.",
+        "notFound": "این تیکت نمونه دیگر وجود ندارد."
+      },
+      "delete": {
+        "button": "حذف",
+        "title": "این تیکت نمونه حذف شود؟",
+        "description": "«{title}» برای همیشه حذف می‌شود و بازگردانی ندارد.",
+        "confirm": "حذف تیکت",
+        "cancel": "نگه داشتن تیکت"
+      },
+      "errors": {
+        "required": "این بخش الزامی است.",
+        "tooLong": "این مقدار بیش از حد طولانی است.",
+        "controlCharacters": "نویسه‌هایی را که قابل نمایش نیستند حذف کنید.",
+        "invalid": "این مقدار معتبر نیست.",
+        "assigneeUnknown": "یک کاربر فعال انتخاب کنید."
+      },
+      "toast": {
+        "created": "تیکت نمونه ساخته شد",
+        "saved": "تیکت نمونه ذخیره شد",
+        "deleted": "تیکت نمونه حذف شد",
+        "stale": "این تیکت نمونه را شخص دیگری تغییر داده است. دوباره بارگیری شد.",
+        "invalidTransition": "تیکت فقط به وضعیت بعدی می‌رود. دوباره بارگیری شد.",
+        "gone": "این تیکت نمونه دیگر وجود ندارد.",
+        "failed": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید."
+      }
+    }
+  }
+}

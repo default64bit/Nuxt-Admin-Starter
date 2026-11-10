@@ -1,6 +1,16 @@
+import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { buildRouteRules } from "./shared/utils/route-rules";
+
+// A locale's message files: `<code>.json` plus every feature file `<feature>.<code>.json` beside it (for example
+// `demo-ticket.fa.json`), merged at load. Removing a feature means deleting its message files; nothing here changes.
+const localeFiles = (code: string): string[] => [
+  `${code}.json`,
+  ...readdirSync(fileURLToPath(new URL("./i18n/locales", import.meta.url)))
+    .filter((name) => name.endsWith(`.${code}.json`))
+    .sort(),
+];
 
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -161,14 +171,14 @@ export default defineNuxtConfig({
         language: "fa-IR",
         name: "فارسی",
         dir: "rtl",
-        file: "fa.json",
+        files: localeFiles("fa"),
       },
       {
         code: "en",
         language: "en",
         name: "English",
         dir: "ltr",
-        file: "en.json",
+        files: localeFiles("en"),
       },
     ],
     langDir: "locales",
