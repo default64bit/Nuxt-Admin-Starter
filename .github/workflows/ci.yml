@@ -198,7 +198,7 @@ jobs:
         run: cat app.log || true
       - name: Stop the stack
         if: always()
-        run: docker compose --profile "*" down --volumes --remove-orphans
+        run: docker compose down --volumes --remove-orphans
 
   security:
     name: Dependency audit and secret scan
