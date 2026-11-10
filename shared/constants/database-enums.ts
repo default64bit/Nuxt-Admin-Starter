@@ -7,3 +7,7 @@
 // Identity
 export const USER_STATUSES = ["active", "disabled"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
+
+/** Why a one-time code was issued: signing in, or confirming a new phone number from My account. */
+export const OTP_PURPOSES = ["login", "phone_change"] as const;
+export type OtpPurpose = (typeof OTP_PURPOSES)[number];

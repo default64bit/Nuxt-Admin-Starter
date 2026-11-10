@@ -7,6 +7,7 @@ const valid = (overrides: Record<string, unknown> = {}) => ({
   appEnv: "production",
   databaseUrl: "postgresql://app:s3cretValue@postgres:5432/app",
   session: { password: randomBytes(24).toString("hex") },
+  ipHashSecret: randomBytes(24).toString("hex"),
   s3: { endpoint: "", region: "us-east-1", accessKey: "", secretKey: "", privateBucket: "", publicBucket: "" },
   public: { siteUrl: "https://admin.test.ir" },
   ...overrides,
@@ -27,8 +28,8 @@ describe("validateRuntimeConfig", () => {
   });
 
   it("reports every missing or short required key by name", () => {
-    const issues = paths(valid({ databaseUrl: "", session: { password: "short" }, public: { siteUrl: "" } }));
-    expect(new Set(issues)).toEqual(new Set(["databaseUrl", "session.password", "public.siteUrl"]));
+    const issues = paths(valid({ databaseUrl: "", session: { password: "short" }, ipHashSecret: "", public: { siteUrl: "" } }));
+    expect(new Set(issues)).toEqual(new Set(["databaseUrl", "session.password", "ipHashSecret", "public.siteUrl"]));
   });
 
   it("flags an unknown environment flag and a non-Postgres URL", () => {

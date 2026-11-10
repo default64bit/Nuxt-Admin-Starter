@@ -138,3 +138,24 @@ edge-guards:
 # Certificate expiry of the hostnames Caddy serves (warns, never fails).
 cert-status:
     bash scripts/ops/cert-status.sh
+
+# Browsers for the E2E suite. Chromium runs everywhere; Firefox and WebKit are installed by `test-e2e-cross-browser`.
+playwright-install:
+    corepack pnpm exec playwright install chromium
+
+# Playwright against a dev server it starts itself (port E2E_PORT, default 3100) and the database in DATABASE_URL.
+test-e2e:
+    corepack pnpm test:e2e
+
+# The Playwright suite as N isolated shards in parallel. Each shard has its own database (a clone of a migrated template
+# with the production seed only) and its own server. Extra arguments go to Playwright, e.g.
+# `just test-e2e-sharded 1 -- tests/e2e/sign-in.spec.ts`. Needs DATABASE_URL and DATABASE_ADMIN_URL (a role that may
+# create databases). Set E2E_POLLING=1 on a machine near its inotify limit, and E2E_SERVER=dev for dev servers.
+test-e2e-sharded shards="3" *args:
+    corepack pnpm test:e2e:sharded --shards {{shards}} {{ if args == "" { "" } else { "-- " + args } }}
+
+# The `@cross-browser` subset (the specs tagged for it) in Firefox and WebKit, on one isolated shard. CI runs this;
+# locally it downloads two more browsers.
+test-e2e-cross-browser:
+    corepack pnpm exec playwright install --with-deps firefox webkit
+    CROSS_BROWSER=1 corepack pnpm test:e2e:sharded --shards 1 -- --project=firefox --project=webkit

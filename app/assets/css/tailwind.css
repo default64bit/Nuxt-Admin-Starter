@@ -99,6 +99,19 @@
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 
+  @keyframes caret-blink {
+    0%,
+    70%,
+    100% {
+      opacity: 1;
+    }
+    20%,
+    50% {
+      opacity: 0;
+    }
+  }
+  --animate-caret-blink: caret-blink 1.25s ease-out infinite;
+
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -318,4 +331,38 @@ html.dark {
   ::-webkit-scrollbar-corner {
     background: transparent;
   }
+}
+
+/*
+ * vue-input-otp hides its real <input> behind the slot boxes and injects these rules as a runtime
+ * <style> tag. The production CSP (ADR-0022, no nonce, no 'unsafe-inline') blocks that tag, so typed
+ * digits and their selection would show through beside the first box. Shipping the same rules in this
+ * same-origin stylesheet keeps them under 'self'.
+ */
+[data-input-otp]::selection {
+  background: transparent !important;
+  color: transparent !important;
+}
+[data-input-otp]:autofill,
+[data-input-otp]:-webkit-autofill {
+  background: transparent !important;
+  color: transparent !important;
+  border-color: transparent !important;
+  opacity: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -webkit-text-fill-color: transparent !important;
+}
+@supports (-webkit-touch-callout: none) {
+  [data-input-otp] {
+    letter-spacing: -0.6em !important;
+    font-weight: 100 !important;
+    font-stretch: ultra-condensed;
+    font-optical-sizing: none !important;
+    left: -1px !important;
+    right: 1px !important;
+  }
+}
+[data-input-otp] + * {
+  pointer-events: all !important;
 }

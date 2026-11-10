@@ -11,3 +11,8 @@ key from this list when it is approved.
 ## Permission catalogue
 
 - every key under `admin.permissions` (`groups.*`, `keys.*`)
+
+## Sign-in
+
+- every key under `auth` (`signedOut`, `sessionEnded.*`, `signIn.*`)
+- every key under `admin.placeholder` (replaced by the admin shell)

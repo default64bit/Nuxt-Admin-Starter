@@ -76,6 +76,12 @@
           "hint": "See who changed what and when."
         }
       }
+    },
+    "placeholder": {
+      "title": "Admin",
+      "welcome": "Welcome, {name}.",
+      "welcomeAnonymous": "You are signed in.",
+      "signOut": "Sign out"
     }
   },
   "error": {
@@ -90,7 +96,50 @@
     "backHome": "Back to home"
   },
   "auth": {
-    "signedOut": "You have been signed out."
+    "signedOut": "You have been signed out.",
+    "sessionEnded": {
+      "title": "Your session has ended",
+      "body": "For your security, you are signed out after 30 minutes without activity or 12 hours in total. Sign in again to continue."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "description": "Enter your phone number and we will text you a one-time code.",
+      "phone": {
+        "label": "Phone number",
+        "placeholder": "0912 345 6789",
+        "continue": "Send code",
+        "invalid": "Enter a valid mobile number, like 0912 345 6789.",
+        "rateLimited": "Too many codes requested. Try again in about {minutes} minutes."
+      },
+      "code": {
+        "title": "Enter the code",
+        "sentTo": "We sent a 5-digit code to {phone}.",
+        "label": "One-time code",
+        "continue": "Continue",
+        "wrong": "That code is wrong.",
+        "resend": "Send the code again",
+        "resendIn": "Send again in {seconds} seconds",
+        "resentSame": "We sent the same code again.",
+        "testMode": "Test mode: code filled in.",
+        "useDifferent": "Use a different number"
+      },
+      "expired": {
+        "title": "This code has expired",
+        "body": "Codes are valid for 2 minutes. Request a new one to continue.",
+        "cta": "Send a new code"
+      },
+      "attempts": {
+        "title": "Too many attempts",
+        "body": "That code can no longer be used. Request a new one to continue.",
+        "cta": "Send a new code"
+      },
+      "errors": {
+        "sms": "We could not send the code. Please try again.",
+        "network": "We could not reach the server. Check your connection and try again.",
+        "generic": "Something went wrong.",
+        "reload": "Reload the page"
+      }
+    }
   },
   "landing": {
     "seo": {

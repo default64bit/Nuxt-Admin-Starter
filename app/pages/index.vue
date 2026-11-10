@@ -2,7 +2,7 @@
 import { localizedPath } from "~~/shared/utils/locale-path";
 
 const { t, locale } = useI18n();
-// Pure string work: sign-in is built by a later slice, and the router can only localize routes that exist.
+// Pure string work, so the link needs no session and the cached HTML is identical for every visitor.
 const signInPath = computed(() => localizedPath("/sign-in", locale.value === "en" ? "en" : "fa"));
 const { other } = useLocaleSwitch();
 

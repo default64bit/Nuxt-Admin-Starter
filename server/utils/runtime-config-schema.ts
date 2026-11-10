@@ -19,6 +19,8 @@ export const runtimeConfigSchema = z.object({
   appEnv: z.enum(["local", "test", "staging", "production"]),
   databaseUrl: nonEmpty.regex(/^postgres(ql)?:\/\//, "must be a postgres:// URL"),
   session: z.object({ password: secret }),
+  // Keys the HMAC of caller IPs stored for the OTP send limits.
+  ipHashSecret: secret,
   public: z.object({ siteUrl: url }),
 });
 

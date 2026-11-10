@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import apiErrorHandler from "../../../server/error-handler";
 import { assertPermissionPrerequisites } from "../../../server/services/authorization";
 import type { ResolvedSession } from "../../../server/services/session.service";
-import { resolveAuthSession } from "../../../server/utils/auth-session";
 import { requireAllPermissions, requireAnyPermission, requirePermission } from "../../../server/utils/require-auth";
 
 const session = (over: Partial<ResolvedSession> = {}): ResolvedSession => ({
@@ -17,8 +16,8 @@ const session = (over: Partial<ResolvedSession> = {}): ResolvedSession => ({
   ...over,
 });
 
-// Test-only routes standing in for guarded handlers: the faked session is the seam until sign-in lands. The route
-// proof against a real signed-in session arrives with the authentication slice.
+// Test-only routes standing in for guarded handlers: the faked session is the seam. The proof against a real
+// signed-in session and a real database is tests/integration/auth/sign-in.test.ts.
 function app(resolved: ResolvedSession | null) {
   const resolve = async (_event: H3Event) => resolved;
   const handler = createApp({ onError: async (error, event) => void (await apiErrorHandler(error, event)) });
@@ -50,16 +49,6 @@ describe("authorization gate (test-only routes)", () => {
     const res = await app(null)("users");
     expect(res.status).toBe(401);
     expect(await res.json()).toMatchObject({ statusCode: 401, data: { code: "unauthenticated" } });
-  });
-
-  it("answers 401 for a real request today: no sign-in exists yet, so every caller is a guest", async () => {
-    const web = toWebHandler(
-      createApp({ onError: async (error, event) => void (await apiErrorHandler(error, event)) }).use(
-        "/api/v1/users",
-        eventHandler(async (event) => requirePermission(event, "view-users", resolveAuthSession)),
-      ),
-    );
-    expect((await web(new Request("http://x/api/v1/users"))).status).toBe(401);
   });
 
   it("answers 403 forbidden to a signed-in User lacking the Permission, never a 404", async () => {
