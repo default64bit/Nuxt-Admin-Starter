@@ -159,6 +159,129 @@
         "deleteFailed": "The role could not be deleted. Try again."
       }
     },
+    "users": {
+      "noName": "No name",
+      "you": "You",
+      "defaultAdmin": "Default admin",
+      "newButton": "New user",
+      "searchLabel": "Search users",
+      "searchPlaceholder": "Search by name or phone",
+      "clearFilters": "Clear filters",
+      "loadError": "Users could not be loaded.",
+      "neverSignedIn": "Never signed in",
+      "rolesMore": "+{count}",
+      "columns": {
+        "name": "Name",
+        "phone": "Phone",
+        "roles": "Roles",
+        "status": "Status",
+        "joined": "Joined",
+        "lastActive": "Last active"
+      },
+      "statuses": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "filters": {
+        "status": "Status",
+        "role": "Role",
+        "allStatuses": "All statuses",
+        "allRoles": "All roles"
+      },
+      "noResults": {
+        "title": "No users match",
+        "description": "Try a different search or clear the filters."
+      },
+      "fields": {
+        "givenName": "Given name",
+        "familyName": "Family name",
+        "phone": "Phone"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "tooLong": "Use at most 50 characters.",
+        "controlCharacters": "Remove characters that can't be shown.",
+        "invalid": "Enter a valid name."
+      },
+      "actions": {
+        "editNames": "Edit names",
+        "editRoles": "Edit roles",
+        "disable": "Disable user",
+        "enable": "Enable user"
+      },
+      "detail": {
+        "loadingName": "User",
+        "loadError": "This user could not be loaded.",
+        "notFound": {
+          "title": "User not found",
+          "description": "There is no user with this id.",
+          "back": "Back to users"
+        },
+        "account": {
+          "title": "Account",
+          "sessions": "Active sessions"
+        },
+        "access": {
+          "title": "Access"
+        }
+      },
+      "dialogs": {
+        "cancel": "Cancel",
+        "create": {
+          "title": "New user",
+          "description": "They can sign in with this number once they hold a role. No code is sent now.",
+          "namesHint": "Names are optional, but give both or neither.",
+          "rolesTitle": "Roles",
+          "submit": "Create user",
+          "openAccount": "Open that account",
+          "errors": {
+            "phone": {
+              "required": "Enter a phone number.",
+              "invalid": "Enter a valid mobile number.",
+              "inUse": "A user with this number already exists."
+            }
+          }
+        },
+        "names": {
+          "title": "Edit names",
+          "description": "The phone number belongs to its owner and can't be changed here.",
+          "save": "Save names"
+        },
+        "roles": {
+          "title": "Edit roles",
+          "description": "The user holds the union of their roles' permissions. Choose at least one.",
+          "confirm": "Save roles",
+          "groupLabel": "Roles",
+          "none": "There are no roles yet.",
+          "loadError": "Roles could not be loaded.",
+          "superLocked": "The Default admin always keeps the Super role.",
+          "problems": {
+            "none": "Choose at least one role.",
+            "unknownRole": "A role no longer exists. The list was reloaded."
+          }
+        },
+        "disable": {
+          "title": "Disable {name}?",
+          "description": "They are signed out everywhere at once and can't sign in until you enable them again. Their roles are kept.",
+          "confirm": "Disable"
+        },
+        "enable": {
+          "title": "Enable {name}?",
+          "description": "They can sign in again with the roles they kept.",
+          "confirm": "Enable"
+        }
+      },
+      "toast": {
+        "created": "User created",
+        "namesSaved": "Names saved",
+        "rolesSaved": "Roles saved",
+        "disabled": "User disabled",
+        "enabled": "User enabled",
+        "stale": "This user was changed by someone else. It was reloaded.",
+        "defaultAdminProtected": "The Default admin can't be disabled or lose the Super role.",
+        "failed": "That didn't work. Try again."
+      }
+    },
     "shell": {
       "userFallback": "Account",
       "userMenu": "Account menu",

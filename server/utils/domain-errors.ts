@@ -60,3 +60,5 @@ export const superRequired = () => new DomainError(403, "Forbidden", "super_requ
 export const phoneInUse = (userId: string) => new DomainError(409, "Conflict", "phone_in_use", { userId, fieldErrors: { phone: ["phone_in_use"] } });
 export const lastRole = () => new DomainError(422, "Unprocessable Entity", "last_role");
 export const accountDisabled = () => new DomainError(409, "Conflict", "account_disabled");
+/** The Default admin is never disabled and never loses `super`. */
+export const defaultAdminProtected = () => new DomainError(409, "Conflict", "default_admin_protected");

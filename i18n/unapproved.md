@@ -28,3 +28,7 @@ key from this list when it is approved.
 ## Roles page
 
 - every key under `admin.roles`
+
+## Users pages
+
+- every key under `admin.users`

@@ -2,7 +2,7 @@
 
 Living spec. Requirements describe observable outcomes; scenarios are GIVEN / WHEN / THEN. Decisions behind them: the "Access" section of `.specs/decision-log.md`, ADR-0010 (sessions and authorization), ADR-0008 (Zod at the boundary), ADR-0009 (API conventions). Sign-in and sessions are in `.specs/authentication/spec.md`, the frame the pages live in is in `.specs/admin-shell/spec.md`.
 
-This file holds three parts: the **Permission catalogue and Roles** (below, built by the Roles page slice), **Users** (to be added by the Users pages slice) and **My account** (last, built by the My account slice). Phase: MVP.
+This file holds three parts: the **Permission catalogue and Roles** (below, built by the Roles page slice), **Users** (after the Roles part, built by the Users pages slice) and **My account** (last, built by the My account slice). Phase: MVP.
 
 ## Purpose
 
@@ -153,9 +153,160 @@ The list, the Role page (including the `super` Role and the dialogs) MUST have n
 ## Assumptions
 
 - Role create, change and delete leave no audit events yet; the audit slice adds `role.create`, `role.update` (name before/after, added and removed keys) and `role.delete` inside the service transactions.
-- Roles are given to Users from the Users pages; the member links on the Role page point at the User page added by that slice.
+- Roles are given to Users from the Users pages (see **Users** below); the member links on the Role page open the User page.
 - The list has a Table view only; the Cards view of ADR-0027 is adopted when the list views slice ships `AdminCardList`.
 - Persian copy under `admin.roles` is a draft until the owner approves it (`i18n/unapproved.md`).
+
+## Users
+
+### Purpose
+
+A User with the right Permissions lists the people who can sign in, creates a User with at least one Role, corrects their names, changes the Roles they hold and, to offboard them, disables them. There is one kind of account: no Shopper or Admin type, badge or filter, and no promote or demote action. Nobody acts on their own account, and the Default admin is never disabled and never loses `super`.
+
+### Data
+
+No new schema: the `users`, `user_roles` and `auth_sessions` tables of the accounts baseline (see **Data** above and `server/database/schema/identity.ts`).
+
+- `users.updated_at` is the User's version. Every change to the account (names, Roles, status) moves it once; a request that changes nothing does not. Every write names the version it was loaded at (`expectedUpdatedAt`).
+- `users.status` is `active` or `disabled`; a database check keeps the Default admin (`is_default_admin`, at most one row) from being `disabled`.
+- Accounts are never deleted. A phone is unique and belongs to its owner, who changes it from My account.
+- Creating a User inserts the account (no verified phone: that is set at their first sign-in) and their `user_roles` rows (with `assigned_by`) in one transaction; disabling sets the status and revokes every session of the account in one transaction.
+
+### Requirement: The Users list shows every account, newest first
+
+`GET /api/v1/admin/users` and the page `/admin/users` MUST list Users 20 per page, newest first, then by id. Each row has the name (or "No name"), the phone (left to right), the Roles (the first two, then "+n"), the status, when they joined and when they were last active (or "Never signed in"), with "You" and "Default admin" marks. The search box is one field: an Iranian mobile number in any form is an exact phone match; anything else is a contains-match on the given and family names ignoring case, Persian and Arabic letter and digit variants and zero-width non-joiners, treating `%` and `_` literally. A Status filter (all, active, disabled) and a Role filter (every Role) narrow the list. The search, the filters and the page live in the URL; an unknown value is dropped. Without results the page says so and offers to clear the filters. "New user" shows only to a User holding `create-users` and `manage-roles`. A row opens the User page.
+
+#### Scenario: Searching by phone and by name
+
+- **GIVEN** a User named "Nia Rahimi" with phone `+989120000211`
+- **WHEN** a User with `view-users` searches `0912 000 0211`, then `RAHI`
+- **THEN** both searches list only that User, and the URL holds `q`
+
+#### Scenario: Filtering
+
+- **GIVEN** an active User holding the Role "Support" and a disabled User holding no such Role
+- **WHEN** the list is filtered by that Role, then by status Disabled
+- **THEN** the first filter lists the active User, the second the disabled one, and "Clear filters" returns to the full list
+
+### Requirement: A User is created with at least one Role
+
+`POST /api/v1/admin/users` MUST need `create-users` and `manage-roles` together and answer `201` with the new User. The body is the phone (any form of an Iranian mobile number, stored as `+989XXXXXXXXX`), both names or neither (1 to 50 characters each, as in My account) and `roleIds`, at least one existing Role (`400 validation_failed`: `phone: invalid | required`, `givenName | familyName: required`, `roleIds: required | unknown`, any other key refused). Granting `super` needs a super actor (`403 super_required`). A phone that is already registered answers `409 phone_in_use` naming that account, and the dialog offers to open it. No code or SMS is sent; the person signs in with the number as for any account.
+
+#### Scenario: Creating a User
+
+- **GIVEN** a User holding `create-users` and `manage-roles`, and a Role "Support"
+- **WHEN** they create a User with phone `0912 000 0211`, names "Nia" and "Rahimi" and the Role "Support"
+- **THEN** the answer is `201`, the User page opens, the account has no verified phone yet and holds only "Support"
+
+#### Scenario: Without a Role
+
+- **WHEN** the dialog is submitted with no Role chosen, or `roleIds` is empty
+- **THEN** the dialog says "Choose at least one role." and the API answers `400 validation_failed` with `roleIds: ["required"]`; nothing is created
+
+#### Scenario: A phone already registered
+
+- **GIVEN** a User with phone `+989120000201`
+- **WHEN** someone creates a User with `0912 000 0201`
+- **THEN** the answer is `409 phone_in_use` with that User's id, and the dialog says "A user with this number already exists." with "Open that account"
+
+### Requirement: The User page shows the account and its actions
+
+`GET /api/v1/admin/users/<id>` (`view-users`) and the page `/admin/users/<id>` MUST show the names, phone, status, joined and last-active times, how many sessions are live, and the Roles; the answer also says whether the asking User holds `super`. An unknown or malformed id is `404` and the page says "User not found". Actions are dialogs: "Edit names" needs `edit-users`; "Edit roles" needs `edit-users` and `manage-roles`; "Disable user" and "Enable user" need `disable-users`. The page shows only the actions the rules allow: none that change the Roles or the status of the User's own account, none on a User who holds `super` unless the viewer is super, and no disable on the Default admin. The server decides again on every request. After an action succeeds a toast shows and the page reloads the account.
+
+#### Scenario: Your own page
+
+- **GIVEN** a User with every Users Permission
+- **WHEN** they open their own User page
+- **THEN** it is marked "You", offers "Edit names" and neither "Disable user" nor "Edit roles"
+
+### Requirement: Names are edited with the My account rules
+
+`PATCH /api/v1/admin/users/<id>` (`edit-users`) MUST take both names (trimmed, inner spaces collapsed, 1 to 50 characters, no control characters, any script) and `expectedUpdatedAt`, and nothing else (a stray `phone` is `400`). It works on any account, one's own and the Default admin's included. The phone is changed only by its owner, from My account. A save that changes nothing writes nothing and moves no version.
+
+#### Scenario: Renaming
+
+- **WHEN** a User with `edit-users` saves "Nina" for the given name of "Nia Rahimi"
+- **THEN** the User is "Nina Rahimi", the version moved, and saving the same names again leaves the version as it was
+
+### Requirement: Roles are replaced as a whole set
+
+`PUT /api/v1/admin/users/<id>/roles` MUST need `edit-users` and `manage-roles` and take `roleIds` (at least one, capped, de-duplicated) and `expectedUpdatedAt`. It adds and removes only the difference inside one transaction that locks the account and share-locks the Roles, and sessions stay valid: the next request reads the new Roles. A User never ends up with no Role. A Role removed meanwhile is `400` with `roleIds: ["unknown"]`.
+
+#### Scenario: Changing Roles
+
+- **GIVEN** a User holding "Support"
+- **WHEN** a User with both Permissions sets their Roles to "Spare"
+- **THEN** the User holds only "Spare", and an old tab that still shows "Support" gets `409 stale_version` when it saves
+
+### Requirement: Disabling ends access at once; enabling restores it
+
+`POST .../disable` and `.../enable` (`disable-users`) MUST take `expectedUpdatedAt`. Disabling sets the status `disabled` and revokes every session of the account (reason `account_disabled`) in the same transaction, so their next request is `401` and they cannot sign in; their Roles are kept. Enabling sets `active` and restores no session: the person signs in again. Disabling a disabled account or enabling an active one is `409 invalid_transition`. The page asks first ("Disable <name>?").
+
+#### Scenario: Offboarding
+
+- **GIVEN** a signed-in User with a live session
+- **WHEN** a User with `disable-users` disables them
+- **THEN** the status is `disabled`, the session count is 0, the revoked session has reason `account_disabled`, and the person's next request answers `401`
+
+### Requirement: Nobody acts on their own account
+
+Disabling, enabling or changing the Roles of one's own account MUST answer `403 own_account`, for every actor including a super User, and the page offers none of these on it. Editing one's own names through this API is allowed (My account is the usual way).
+
+#### Scenario: Disabling yourself
+
+- **WHEN** a User with `disable-users` posts a disable for their own id
+- **THEN** the answer is `403 own_account` and the account stays active
+
+### Requirement: The Default admin is never disabled and never loses `super`
+
+Disabling the Default admin, by anyone, MUST answer `409 default_admin_protected`; so MUST a Roles save for it that leaves out the `super` Role (a save that keeps `super` and adds other Roles is allowed). The Roles dialog keeps `super` switched on for them. A database check also refuses `disabled` for the Default admin.
+
+#### Scenario: Trying to lock the panel
+
+- **GIVEN** the Default admin and a super User
+- **WHEN** the super User disables the Default admin, or sets their Roles without `super`
+- **THEN** each answers `409 default_admin_protected` and nothing changes
+
+### Requirement: Only a super User grants `super` or acts on a User who holds it
+
+An actor without `super` MUST get `403 super_required` when creating a User with, granting, or removing the `super` Role, and when disabling, enabling or re-roling a User who holds it. The Role pickers offer the `super` Role only to a super viewer.
+
+#### Scenario: A non-super manager
+
+- **GIVEN** a User with every Users Permission but not `super`
+- **WHEN** they disable a super User, give anyone `super`, or create a User with `super`
+- **THEN** each answers `403 super_required` and nothing changes
+
+### Requirement: The Users routes check the Permission on the server
+
+Every route MUST call its guard before anything else: `GET` list and `GET` one need `view-users`; `POST` needs `create-users` and `manage-roles`; `PATCH` needs `edit-users`; `PUT .../roles` needs `edit-users` and `manage-roles`; `POST .../disable` and `.../enable` need `disable-users`. Without a session the answer is `401 unauthenticated`; with a session missing any one of the keys `403 forbidden`. The page `/admin/users` and `/admin/users/<id>` need `view-users`; without it the page answers 403 and the menu has no entry. A read or write that comes back 403 while the page is open shows the "Access denied" alert in place.
+
+#### Scenario: Part of the keys is not enough
+
+- **GIVEN** a User holding `view-users` and `create-users` but not `manage-roles`
+- **WHEN** they `POST` a User
+- **THEN** the answer is `403 forbidden` and "New user" is not on their list page
+
+### Requirement: The Users pages are accessible, in both locales and directions
+
+The list, the User page and the create and roles dialogs MUST have no axe violations (WCAG 2 A/AA and 2.1 A/AA) in `fa` and `en`, render right-to-left in `fa` and left-to-right in `en` with logical properties, keep phone numbers left to right, and not scroll sideways on a phone. Destructive confirms use the outline button with destructive text, which keeps contrast.
+
+### Constitution check
+
+- II (authenticated): every Users route and page needs a session and a Permission.
+- IV (security): Zod on every body, query and id; the server decides, the UI only mirrors; parameterized queries; the Default admin and `super` rules are checked in the service on the locked row; disabling revokes sessions in the same transaction.
+- VI (data models first): no new tables; the columns and invariants used are listed under Data.
+- VIII (Vue Query): the pages read and write through `useAdminUsers`; dialogs keep their typed values locally and the page refetches after a write, not mirroring remote data into Pinia.
+
+### Assumptions
+
+- User create, edit, Role change, disable and enable leave no audit events yet; the audit slice adds `user.create`, `user.update` (which fields changed), `user.roles` (added and removed Role ids), `user.disable` and `user.enable` inside the same service transactions (`server/services/admin-users.service.ts`). Disable and enable take no reason until then; the audit slice decides whether to add one.
+- Re-enabling is included so an offboarding mistake is reversible; the decision log names only disabling.
+- Editing a User's Roles needs `edit-users` as well as `manage-roles` (the Roles dialog is part of editing a User); creating needs `create-users` and `manage-roles`.
+- Names are editable by any User with `edit-users`, including on a `super` account; the phone is not editable here.
+- The Analytics strip above the list (story 86) belongs to the dashboard framework slice; the list has none yet.
+- The list has a Table view only (as Roles).
+- Persian copy under `admin.users` is a draft until the owner approves it (`i18n/unapproved.md`).
 
 ## My account
 
