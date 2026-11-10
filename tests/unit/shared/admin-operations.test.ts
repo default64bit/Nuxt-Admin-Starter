@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { ADMIN_OPERATIONS, findAdminOperation } from "../../../shared/constants/admin-operations";
+import { ADMIN_OPERATIONS, ADMIN_PREFERENCE_ROUTES, findAdminOperation } from "../../../shared/constants/admin-operations";
 import { AUDIT_ACTIONS } from "../../../shared/constants/audit-actions";
 
 const ROOT = join(__dirname, "../../../server/api/v1/admin");
@@ -15,7 +15,7 @@ describe("admin operations registry", () => {
       .filter((match): match is RegExpExecArray => match !== null)
       .map(([, route, method]) => `${method!.toUpperCase()} ${route!.replace(/\[(\w+)\]/g, ":$1").replace(/\/index$/, "").replace(/^index$/, "")}`);
     expect(mutating.length).toBeGreaterThan(0);
-    expect(mutating.filter((key) => !(key in ADMIN_OPERATIONS))).toEqual([]);
+    expect(mutating.filter((key) => !(key in ADMIN_OPERATIONS) && !ADMIN_PREFERENCE_ROUTES.includes(key))).toEqual([]);
     for (const operation of Object.values(ADMIN_OPERATIONS)) expect(Object.keys(AUDIT_ACTIONS)).toContain(operation.action);
   });
 

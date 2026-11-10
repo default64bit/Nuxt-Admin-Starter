@@ -32,6 +32,15 @@ export const ADMIN_OPERATIONS: Record<string, AdminOperation> = {
   // demo-ticket:end
 };
 
+// The signed-in User's own display preferences (Dashboard layout, ranges, Chart style). They need no Permission, so they
+// are never refused, and they are not audited. Mutating admin routes listed here need no ADMIN_OPERATIONS row.
+export const ADMIN_PREFERENCE_ROUTES: readonly string[] = [
+  "PUT account/dashboard/arrangement",
+  "DELETE account/dashboard/arrangement",
+  "PUT account/dashboard/chart-style",
+  "PUT account/dashboard/ranges/:moduleKey",
+];
+
 export interface MatchedOperation {
   operation: AdminOperation;
   /** The registry pattern, never the concrete URL (`/api/v1/admin/users/:id/disable`). */
