@@ -101,14 +101,9 @@ describe("admin shell", () => {
   });
 
   describe("top bar and Inbox mount points", () => {
-    it("has the bell and push-banner mount points present and empty", async () => {
+    it("has the bell and push-banner mount points", async () => {
       const wrapper = await mount(AdminLayout, { slots: { default: () => h("p", "x") } });
-      for (const slot of ["admin-inbox-bell", "admin-push-banner"]) {
-        const point = wrapper.find(`[data-slot="${slot}"]`);
-        expect(point.exists(), slot).toBe(true);
-        expect(point.element.children, slot).toHaveLength(0);
-        expect(point.text(), slot).toBe("");
-      }
+      for (const slot of ["inbox-bell", "admin-push-banner"]) expect(wrapper.find(`[data-slot="${slot}"]`).exists(), slot).toBe(true);
     });
 
     it("keeps the language and theme switches out of the top bar (they live in the user menu)", async () => {

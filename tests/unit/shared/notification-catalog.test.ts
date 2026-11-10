@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { INBOX_TYPE_COLORS, INBOX_TYPE_ICONS } from "../../../app/components/admin/inbox-icons";
 import { LOCALES } from "../../../shared/constants/database-enums";
-import { ATTENTION_TYPES, ATTENTION_TYPE_KEYS } from "../../../shared/constants/notification-catalog";
+import { ATTENTION_TYPE_KEYS, attentionDefinition } from "../../../shared/constants/notification-catalog";
 import { PERMISSION_KEYS } from "../../../shared/constants/permissions";
 import { renderAttentionText } from "../../../shared/utils/attention-message";
 
 // The completeness test of ADR-0021: an event without a field, a translation or an icon fails here.
 describe("notification catalogue", () => {
   it.each(ATTENTION_TYPE_KEYS)("%s is complete", (type) => {
-    const definition = ATTENTION_TYPES[type];
+    const definition = attentionDefinition(type);
     expect(PERMISSION_KEYS).toContain(definition.permission);
     expect(definition.tokens.length).toBeLessThanOrEqual(3);
     for (const locale of LOCALES) {

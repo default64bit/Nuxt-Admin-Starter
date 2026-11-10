@@ -1,7 +1,7 @@
 import type { Tx } from "../database/types";
 import * as repository from "../repositories/notification-events.repository";
 import { fanOutChannels } from "./notification-channel-fanout.service";
-import { ATTENTION_TYPES, attentionDedupeKey, attentionSource, type AttentionIds, type AttentionType } from "../../shared/constants/notification-catalog";
+import { attentionDedupeKey, attentionDefinition, attentionSource, type AttentionIds, type AttentionType } from "../../shared/constants/notification-catalog";
 
 // The one way a business change raises a Notification (ADR-0021). Both helpers take the caller's transaction, so an event
 // exists exactly when the change that caused it committed, and a replay (repeated transition, duplicate callback) writes
@@ -25,9 +25,9 @@ export interface RecordResult {
 export async function recordNotificationEvent<T extends AttentionType>(tx: Tx, event: AttentionEventInput<T>): Promise<RecordResult> {
   const { type } = event;
   const ids = event.ids as never;
-  const definition = ATTENTION_TYPES[type];
+  const definition = attentionDefinition(type);
   const source = attentionSource(type, ids);
-  const tokens = (definition.tokens as readonly string[]).map((name) => {
+  const tokens = definition.tokens.map((name) => {
     const value = event.tokens[name];
     if (value === undefined || value === "") throw new Error(`Notification ${type} needs a ${name} token`);
     return String(value);

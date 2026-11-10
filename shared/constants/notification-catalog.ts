@@ -51,12 +51,18 @@ export type AttentionIds<T extends AttentionType> = Parameters<(typeof ATTENTION
 
 export const ATTENTION_TYPE_KEYS = Object.keys(ATTENTION_TYPES) as AttentionType[];
 
-export const attentionDedupeKey = <T extends AttentionType>(type: T, ids: AttentionIds<T>): string => (ATTENTION_TYPES[type].dedupe as (i: AttentionIds<T>) => string)(ids);
-export const attentionSource = <T extends AttentionType>(type: T, ids: AttentionIds<T>): AttentionSource => (ATTENTION_TYPES[type].source as (i: AttentionIds<T>) => AttentionSource)(ids);
-export const attentionLink = (type: AttentionType, sourceId: string): string => (ATTENTION_TYPES[type].link as (id: string) => string)(sourceId);
+/**
+ * One event's definition in its general shape. Code outside the catalogue reads definitions through this, so it still
+ * compiles when the catalogue is empty (a Project after `just demo-remove`, before it adds its first event).
+ */
+export const attentionDefinition = (type: AttentionType): AttentionDefinition<never> => (ATTENTION_TYPES as Record<string, AttentionDefinition<never>>)[type]!;
+
+export const attentionDedupeKey = <T extends AttentionType>(type: T, ids: AttentionIds<T>): string => (attentionDefinition(type).dedupe as (i: AttentionIds<T>) => string)(ids);
+export const attentionSource = <T extends AttentionType>(type: T, ids: AttentionIds<T>): AttentionSource => (attentionDefinition(type).source as (i: AttentionIds<T>) => AttentionSource)(ids);
+export const attentionLink = (type: AttentionType, sourceId: string): string => attentionDefinition(type).link(sourceId);
 
 /** The types a User holding these Permissions can see in the Inbox (the Type select offers exactly these). */
-export const visibleAttentionTypes = (permissions: readonly string[]): AttentionType[] => ATTENTION_TYPE_KEYS.filter((type) => permissions.includes(ATTENTION_TYPES[type].permission));
+export const visibleAttentionTypes = (permissions: readonly string[]): AttentionType[] => ATTENTION_TYPE_KEYS.filter((type) => permissions.includes(attentionDefinition(type).permission));
 
 /** Fills `{1}`..`{3}` with the tokens, in order. */
 export function renderCopy(copy: string, tokens: readonly string[]): string {
