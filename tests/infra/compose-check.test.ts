@@ -91,6 +91,18 @@ describe.skipIf(!enabled)("compose-check", () => {
     expect(output).toMatch(/postgres.*does not match/);
   });
 
+  it("fails when the Caddy image drifts from the pin in ops/caddy/base-images.txt", () => {
+    const { status, output } = withOverlay("compose.prod.yaml", (t) => t.replace(/(base\/caddy:[^@\n]+@sha256:)[0-9a-f]{64}/, "$1" + "0".repeat(64)));
+    expect(status).not.toBe(0);
+    expect(output).toMatch(/caddy: image .* must be the mirrored base image/);
+  });
+
+  it("fails when the app port is not published for the Project's own proxy (edge Off)", () => {
+    const { status, output } = withOverlay("compose.yaml", (t) => t.replace("      - 127.0.0.1:${APP_HOST_PORT:-3000}:3000\n", "      []\n").replace("    ports:\n      []\n", ""), withProfiles(""));
+    expect(status).not.toBe(0);
+    expect(output).toMatch(/app: must publish port 3000/);
+  });
+
   it("fails on a publicly bound database port", () => {
     const { status, output } = withOverlay("compose.yaml", (t) => t.replace("127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432", "${POSTGRES_HOST_PORT:-5432}:5432"));
     expect(status).not.toBe(0);

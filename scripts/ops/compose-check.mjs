@@ -7,13 +7,20 @@ const envFile = process.env.COMPOSE_CHECK_ENV_FILE || (existsSync(".env") ? ".en
 // The Optional-piece profiles (ADR-0029). `ops` holds the one-shot jobs and is not part of the COMPOSE_PROFILES list.
 const PIECE_PROFILES = ["media", "monitoring", "edge", "backup"];
 const KNOWN_PROFILES = new Set([...PIECE_PROFILES, "ops"]);
-// Services that may publish a port on every interface. None yet: the edge proxy adds itself here.
-const publicServices = new Set([]);
+// Services that may publish a port on every interface: the edge proxy, the only public listener.
+const publicServices = new Set(["caddy"]);
 // Services that must always run, whichever Optional pieces are switched off.
 const coreServices = ["postgres", "app"];
 const DEV_IMAGE = "nuxt-admin-starter-dev:";
 const GHCR_PREFIX = "ghcr.io/default64bit/nuxt-admin-starter/";
 const DIGEST = /@sha256:[0-9a-f]{64}$/;
+// The stock Caddy image production runs: the one digest-pinned line of ops/caddy/base-images.txt (read next to this
+// script), which the release workflow mirrors under `base/` and compose.prod.yaml pins.
+const CADDY_BASE = readFileSync(new URL("../../ops/caddy/base-images.txt", import.meta.url), "utf8")
+  .split("\n")
+  .map((line) => line.trim())
+  .find((line) => /^caddy:[^@\s]+@sha256:[0-9a-f]{64}$/.test(line));
+if (!CADDY_BASE) throw new Error("ops/caddy/base-images.txt has no digest-pinned caddy:<tag>@sha256:... line");
 const stacks = {
   dev: ["compose.yaml", "compose.dev.yaml"],
   prod: ["compose.yaml", "compose.prod.yaml"],
@@ -66,6 +73,9 @@ function inspect(stack, config, selected) {
         errors.push(`[${stack}] ${name}: base image "${service.image}" must be pinned by digest (name:tag@sha256:...)`);
       }
     }
+    if (stack === "prod" && name === "caddy" && !service.image?.endsWith(`/base/${CADDY_BASE}`)) {
+      errors.push(`[${stack}] caddy: image "${service.image}" must be the mirrored base image ${GHCR_PREFIX}base/${CADDY_BASE} (ops/caddy/base-images.txt)`);
+    }
     if (stack === "prod" && service.build) errors.push(`[${stack}] ${name}: has a build section; production images come from the registry`);
     const logging = service.logging;
     if (logging?.driver !== "json-file" || !logging.options?.["max-size"] || !logging.options?.["max-file"]) {
@@ -93,6 +103,14 @@ function inspect(stack, config, selected) {
     if (!services[name]) errors.push(`[${stack}] expected service "${name}" is missing`);
     else if (services[name].profiles?.length) errors.push(`[${stack}] ${name}: core service must not sit behind a profile`);
   }
+  // Edge Off keeps the app reachable for the Project's own proxy: the shared file publishes it on the loopback.
+  if (!(services.app?.ports ?? []).some((port) => port.host_ip === "127.0.0.1" && port.target === 3000)) {
+    errors.push(`[${stack}] app: must publish port 3000 on 127.0.0.1 so a proxy of the Project can reach it when the edge profile is Off`);
+  }
+  // The edge proxy exists in production only, behind its profile, and is the one service that may publish publicly.
+  if (stack === "prod" && !services.caddy) errors.push(`[${stack}] caddy service is missing`);
+  else if (stack === "prod" && !services.caddy.profiles?.includes("edge")) errors.push(`[${stack}] caddy: must sit behind the edge profile`);
+  if (stack === "dev" && services.caddy) errors.push(`[${stack}] caddy must not be part of the dev stack`);
   return errors;
 }
 

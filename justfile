@@ -121,3 +121,12 @@ compose-check:
 # Docker-based infra tests (compose-check rules). They skip unless INFRA_TESTS=1, so no other recipe or CI job runs them.
 test-compose:
     INFRA_TESTS=1 corepack pnpm exec vitest run tests/infra
+
+# Edge proxy (Optional piece `edge`). Both do nothing when `edge` is absent from COMPOSE_PROFILES.
+# Production guards for the proxy: real domain and ACME email, public URL in step. Run before switching a release.
+edge-guards:
+    bash scripts/ops/edge-guards.sh
+
+# Certificate expiry of the hostnames Caddy serves (warns, never fails).
+cert-status:
+    bash scripts/ops/cert-status.sh

@@ -12,3 +12,46 @@ services:
   db-ensure: *tools-image
   migrate: *tools-image
   seed: *tools-image
+
+  # Edge proxy (Optional piece, profile `edge`; docs/optional-pieces/caddy.md). Stock Caddy without plugins, the GHCR
+  # mirror of ops/caddy/base-images.txt; certificates by HTTP-01/TLS-ALPN-01. With the profile Off nothing here runs
+  # and the Project's own proxy reaches the app on the loopback port the shared file publishes.
+  caddy:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
+    profiles: [edge]
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+      SITE_DOMAIN: ${SITE_DOMAIN:-app.example.com}
+      # CADDY_ACME_CA is the Let's Encrypt directory; set it to the staging directory in .env for the first issuance only.
+      CADDY_ACME_CA: ${CADDY_ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+      # Hosts of other Optional pieces plug in here (see the end of the Caddyfile for the pattern).
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./ops/caddy/pieces:/etc/caddy/pieces:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, caddy, validate, --config, /etc/caddy/Caddyfile]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks: [backend]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+volumes:
+  # Issued certificates and the ACME account: losing them re-issues everything and can hit Let's Encrypt rate limits.
+  caddy-data:
+  caddy-config:
