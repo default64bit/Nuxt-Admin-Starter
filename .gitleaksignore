@@ -1,0 +1,2 @@
+# Fake Kavenegar key in a unit test (the line now carries gitleaks:allow; this covers the commit that added it).
+e97dc92f0975997c78435a46f88cd8afae8ae0d8:tests/unit/server/kavenegar-adapter.test.ts:generic-api-key:8

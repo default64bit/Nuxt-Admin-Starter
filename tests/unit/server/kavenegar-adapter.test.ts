@@ -5,7 +5,7 @@ import { kavenegarAccepted, kavenegarError, type RecordedResponse } from "../../
 
 // The Kavenegar adapter against recorded responses. No test here touches the network.
 
-const API_KEY = "kv-secret-API-key-0123456789";
+const API_KEY = "kv-secret-API-key-0123456789"; // gitleaks:allow (fake key for recorded responses)
 const RECIPIENT = "+989121234567";
 
 const settings = (overrides: Partial<KavenegarSettings> = {}): KavenegarSettings => ({
