@@ -3,3 +3,4 @@ import * as v from "../../../shared/constants/database-enums";
 
 export const userStatusEnum = pgEnum("user_status", v.USER_STATUSES);
 export const otpPurposeEnum = pgEnum("otp_purpose", v.OTP_PURPOSES);
+export const auditOutcomeEnum = pgEnum("audit_outcome", v.AUDIT_OUTCOMES);

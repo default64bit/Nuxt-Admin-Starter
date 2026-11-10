@@ -1,5 +1,20 @@
+CREATE TYPE "public"."audit_outcome" AS ENUM('success', 'denied', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."otp_purpose" AS ENUM('login', 'phone_change');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('active', 'disabled');--> statement-breakpoint
+CREATE TABLE "admin_audit_events" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"actor_user_id" uuid,
+	"action" text NOT NULL,
+	"entity_type" text NOT NULL,
+	"entity_id" text,
+	"outcome" "audit_outcome" NOT NULL,
+	"change_summary" jsonb,
+	"reason" text,
+	"correlation_id" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "admin_audit_events_action_not_blank" CHECK (btrim("admin_audit_events"."action") <> '')
+);
+--> statement-breakpoint
 CREATE TABLE "auth_sessions" (
 	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
 	"user_id" uuid NOT NULL,
@@ -87,6 +102,7 @@ CREATE TABLE "seed_versions" (
 	"applied_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "admin_audit_events" ADD CONSTRAINT "admin_audit_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp_challenges" ADD CONSTRAINT "otp_challenges_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp_send_events" ADD CONSTRAINT "otp_send_events_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -95,6 +111,9 @@ ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_key_p
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_assigned_by_users_id_fk" FOREIGN KEY ("assigned_by") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "admin_audit_events_time_idx" ON "admin_audit_events" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "admin_audit_events_entity_idx" ON "admin_audit_events" USING btree ("entity_type","entity_id","created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "admin_audit_events_actor_idx" ON "admin_audit_events" USING btree ("actor_user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "auth_sessions_token_hash_unique" ON "auth_sessions" USING btree ("token_hash");--> statement-breakpoint
 CREATE INDEX "auth_sessions_user_idx" ON "auth_sessions" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "otp_challenges_one_active_unique" ON "otp_challenges" USING btree ("phone_e164","purpose") WHERE "otp_challenges"."consumed_at" IS NULL AND "otp_challenges"."invalidated_at" IS NULL;--> statement-breakpoint
@@ -109,9 +128,13 @@ CREATE UNIQUE INDEX "users_phone_e164_unique" ON "users" USING btree ("phone_e16
 CREATE INDEX "users_created_idx" ON "users" USING btree ("created_at" DESC NULLS LAST,"id" DESC NULLS LAST);--> statement-breakpoint
 CREATE UNIQUE INDEX "users_single_default_admin_unique" ON "users" USING btree ("is_default_admin") WHERE "users"."is_default_admin";
 --> statement-breakpoint
--- Hand-written (Drizzle cannot generate triggers). The `super` Role is protected in the database as well as in the
--- service: it cannot be deleted, renamed or unflagged, and none of its Permission rows can be deleted or changed.
--- Inserting rows stays allowed, so the seed can grant newly added keys to it.
+-- hand-written-sql:start
+-- Drizzle cannot generate triggers or functions. After regenerating this baseline from the schema, re-append this
+-- whole block (everything from the `hand-written-sql:start` line to the `hand-written-sql:end` line).
+
+-- 1. The `super` Role is protected in the database as well as in the service: it cannot be deleted, renamed or
+-- unflagged, and none of its Permission rows can be deleted or changed. Inserting rows stays allowed, so the seed
+-- can grant newly added keys to it.
 CREATE FUNCTION protect_super_role() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -145,3 +168,21 @@ CREATE TRIGGER roles_protect_super
 CREATE TRIGGER role_permissions_protect_super
   BEFORE UPDATE OR DELETE ON role_permissions
   FOR EACH ROW EXECUTE FUNCTION protect_super_role();
+--> statement-breakpoint
+
+-- 2. The audit log is append-only: no audit event is ever changed, removed or truncated away.
+CREATE FUNCTION reject_row_mutation() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+  RAISE EXCEPTION '% is append-only: % is not allowed', TG_TABLE_NAME, TG_OP USING ERRCODE = 'integrity_constraint_violation';
+END;
+$$;
+--> statement-breakpoint
+CREATE TRIGGER admin_audit_events_append_only
+  BEFORE UPDATE OR DELETE ON admin_audit_events
+  FOR EACH ROW EXECUTE FUNCTION reject_row_mutation();
+--> statement-breakpoint
+CREATE TRIGGER admin_audit_events_no_truncate
+  BEFORE TRUNCATE ON admin_audit_events
+  FOR EACH STATEMENT EXECUTE FUNCTION reject_row_mutation();
+-- hand-written-sql:end

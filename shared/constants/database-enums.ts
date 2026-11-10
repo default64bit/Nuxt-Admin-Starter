@@ -11,3 +11,8 @@ export type UserStatus = (typeof USER_STATUSES)[number];
 /** Why a one-time code was issued: signing in, or confirming a new phone number from My account. */
 export const OTP_PURPOSES = ["login", "phone_change"] as const;
 export type OtpPurpose = (typeof OTP_PURPOSES)[number];
+
+// Audit
+/** What happened to an attempted admin action: it ran, it was refused, or it was authorized but could not complete. */
+export const AUDIT_OUTCOMES = ["success", "denied", "failed"] as const;
+export type AuditOutcome = (typeof AUDIT_OUTCOMES)[number];
