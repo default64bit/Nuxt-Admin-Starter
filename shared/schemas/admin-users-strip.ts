@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 export const usersStripSchema = z.object({
   newAccounts: z.object({ current: z.number().int().min(0), previous: z.number().int().min(0) }),
-  sparkline: z.array(z.object({ day: z.string(), count: z.number().int().min(0) })),
+  sparkline: z.array(z.object({ day: z.string(), count: z.number().int().min(0) })).max(31),
   total: z.number().int().min(0),
   disabled: z.number().int().min(0),
 });
