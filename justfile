@@ -136,6 +136,11 @@ db-seed-dev:
     docker compose run --rm -e NUXT_APP_ENV=local seed corepack pnpm exec tsx scripts/db/demo-ticket-dev-seed.ts
 # demo-ticket:end
 
+# Remove the demo ticket domain (the Reference module): its files, marked blocks and migration. Before any deploy the migration
+# is dropped (then run `just dev-reset`); `just demo-remove deployed=true` keeps it and generates a normal drop migration.
+demo-remove *args:
+    corepack pnpm exec tsx scripts/demo/demo-remove.ts {{args}}
+
 # Idempotent bootstrap: start PostgreSQL, ensure the database exists, apply migrations, seed.
 db-prepare:
     just services-up

@@ -45,6 +45,8 @@ key from this list when it is approved.
 
 - every key under `admin.strip`
 
+<!-- demo-ticket:start -->
 ## Demo tickets
 
 - every key in `i18n/locales/demo-ticket.fa.json`
+<!-- demo-ticket:end -->
