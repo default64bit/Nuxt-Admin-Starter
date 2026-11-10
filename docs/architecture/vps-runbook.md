@@ -80,7 +80,7 @@ What `just deploy` does, in order:
 1. **Guards.** A full lowercase SHA, `NUXT_APP_ENV=production`, `DEPLOY_APPROVED=YES`, a real `https://` `NUXT_PUBLIC_SITE_URL`, and, with `edge` listed, `scripts/ops/edge-guards.sh` (real `SITE_DOMAIN` and `ACME_EMAIL`, the public URL in step, and the media or errors domain only while those pieces are listed).
 2. **Lock.** Deploys and rollbacks never run concurrently.
 3. **Pull and verify** the release images (`app`, the `tools` image behind the jobs, and Caddy when `edge` is listed).
-4. **Backup report** (only while `backup` is listed and the recipe exists): advisory, never blocks.
+4. **Backup report** (only while `backup` is listed and the recipe exists): `just backup-status` prints the age of the newest off-host dump, or that none exists. It never blocks. After the switch the nightly backup job is moved to the release's `backup` image, best effort (restore drill: [Monitoring, backups and TLS](monitoring-backups-tls.md)).
 5. **Jobs, before anything is switched:** `migrate`, `seed`, and the media storage initialization while `media` is listed. A failure here aborts with the old release still serving.
 6. **Switch** the application (and Caddy while `edge` is listed) to the new tag and wait for container health. GlitchTip is started best effort while `monitoring` is listed.
 7. **Smoke check** on the app's loopback port: liveness, readiness, the landing page and the sign-in page (`scripts/ops/smoke-check.sh`).

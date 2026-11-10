@@ -13,6 +13,8 @@ services:
   migrate: *tools-image
   seed: *tools-image
   monitoring-db-init: *tools-image
+  backup:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/backup:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
   glitchtip:
     image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
 

@@ -12,10 +12,12 @@ const publicServices = new Set(["caddy"]);
 // The services each Optional piece adds. Each must exist and sit behind its piece's profile, so that Off removes it.
 const PIECE_SERVICES = {
   monitoring: ["glitchtip", "monitoring-db-init"],
+  backup: ["backup"],
 };
 // Services that must always run, whichever Optional pieces are switched off.
 const coreServices = ["postgres", "app"];
-const DEV_IMAGE = "nuxt-admin-starter-dev:";
+// Images the dev overlay builds locally: the Node dev image and the backup job image (nuxt-admin-starter-dev-backup).
+const DEV_IMAGE = "nuxt-admin-starter-dev";
 const GHCR_PREFIX = "ghcr.io/default64bit/nuxt-admin-starter/";
 const DIGEST = /@sha256:[0-9a-f]{64}$/;
 // The stock Caddy image production runs: the one digest-pinned line of ops/caddy/base-images.txt (read next to this
@@ -25,6 +27,9 @@ const CADDY_BASE = readFileSync(new URL("../../ops/caddy/base-images.txt", impor
   .map((line) => line.trim())
   .find((line) => /^caddy:[^@\s]+@sha256:[0-9a-f]{64}$/.test(line));
 if (!CADDY_BASE) throw new Error("ops/caddy/base-images.txt has no digest-pinned caddy:<tag>@sha256:... line");
+// The backup job image is built from the PostgreSQL image of compose.yaml, so that pg_dump matches the server major.
+// The Dockerfile `backup` stage repeats its pin; compareBackupBase fails when the two differ.
+const BACKUP_BASE = /^FROM\s+(\S+@sha256:[0-9a-f]{64})\s+AS\s+backup\s*$/im.exec(readFileSync(new URL("../../Dockerfile", import.meta.url), "utf8"))?.[1];
 const stacks = {
   dev: ["compose.yaml", "compose.dev.yaml"],
   prod: ["compose.yaml", "compose.prod.yaml"],
@@ -140,6 +145,12 @@ function compareBaseImages(dev, prod) {
   return errors;
 }
 
+function compareBackupBase(dev) {
+  const postgres = dev.services?.postgres?.image;
+  if (!BACKUP_BASE) return ["Dockerfile: no digest-pinned `FROM <image>@sha256:... AS backup` stage"];
+  return BACKUP_BASE === postgres ? [] : [`Dockerfile: the backup stage image "${BACKUP_BASE}" must equal the postgres image of compose.yaml "${postgres}"`];
+}
+
 const errors = [];
 const selected = selectedProfiles();
 for (const profile of selected) {
@@ -152,6 +163,7 @@ for (const [stack, files] of Object.entries(stacks)) {
   errors.push(...resolveErrors, ...(config ? inspect(stack, config, selected) : []));
 }
 if (resolved.dev && resolved.prod) errors.push(...compareBaseImages(resolved.dev, resolved.prod));
+if (resolved.dev) errors.push(...compareBackupBase(resolved.dev));
 if (errors.length) {
   console.error(errors.join("\n"));
   console.error(`\ncompose-check FAILED (${errors.length} problem${errors.length === 1 ? "" : "s"}).`);

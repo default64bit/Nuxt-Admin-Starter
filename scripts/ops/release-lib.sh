@@ -103,10 +103,20 @@ rl_verify_images() {
   docker compose config --images ${release_image_services} | sort -u | xargs -r -n1 docker image inspect > /dev/null
 }
 
-# Advisory off-host backup report; only with the `backup` piece on and its recipe present. Never fails a release.
+# Last-success report of the off-host backups; only with the `backup` piece on and its recipe present. Never fails a release.
 rl_backup_status() {
   rl_profile_on backup || { echo "Backups are Off (profile backup not listed): skipping the backup report."; return 0; }
   if just --show backup-status > /dev/null 2>&1; then just backup-status "$1" || true; else echo "No backup-status recipe in this release: skipping the backup report."; fi
+}
+
+# Moves the nightly backup job to the new release's image (profile `backup`). Best effort, like GlitchTip: a failed pull
+# or start is a warning, the release goes on and the previous backup container keeps running.
+rl_backup_up() {
+  rl_profile_on backup || return 0
+  rl_has_service backup || return 0
+  if docker compose pull backup && docker compose up -d --no-deps backup; then return 0; fi
+  echo "WARNING: the backup job could not be started or updated; nightly backups may be missing (the app is unaffected)." >&2
+  return 0
 }
 
 # Bucket and policy initialization of the media piece; a no-op unless `media` is listed and the release defines the job.

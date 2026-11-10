@@ -62,6 +62,26 @@ monitoring-db-ensure:
 monitoring-up:
     docker compose --profile monitoring up -d glitchtip
 
+# Database backups (the `backup` profile; docs/optional-pieces/backups.md). The nightly job is the `backup` service that
+# `just dev`/`just up` start when COMPOSE_PROFILES lists `backup`; these recipes run the same job once, in a throwaway
+# container. They need BACKUP_S3_* in .env. With `backup` Off they do nothing.
+# Dump the database to the bucket right now (same retention as the nightly run).
+backup-now:
+    bash scripts/ops/backup-run.sh now
+
+# Last-success check: the newest dump in the bucket and its age. Exit 0 healthy, 1 no recent dump, 2 no destination
+# configured, 3 bucket unreachable. `deploy` and `release-status` run it and never fail because of it.
+backup-status *release:
+    bash scripts/ops/backup-run.sh status
+
+# List the dumps in the bucket, oldest first (the keys that backup-restore takes).
+backup-list:
+    bash scripts/ops/backup-run.sh list
+
+# Restore a dump into a NEW scratch database (default restore_<timestamp>, or the name you give); the live database is never touched.
+backup-restore key *scratch:
+    bash scripts/ops/backup-run.sh restore {{key}} {{scratch}}
+
 # Quality gates.
 lint:
     corepack pnpm lint
@@ -188,7 +208,7 @@ deploy sha:
     step="storage-init"; rl_storage_init
     step="start release and verify"
     trap - ERR
-    if rl_switch "{{sha}}" "${release_services}" && { rl_monitoring; rl_verify; }; then
+    if rl_switch "{{sha}}" "${release_services}" && { rl_monitoring; rl_backup_up; rl_verify; }; then
       rl_write_state "{{sha}}" "${previous_sha}"
       outcome="success"; step="done"
       echo "Deployed {{sha}} (previous: ${previous_sha:-none})."
@@ -270,7 +290,7 @@ prune-images:
     keep_previous="$(. "${state_file}"; echo "${PREVIOUS_SHA:-}")"
     [ -n "${keep_current}" ] || rl_fail "State file has no current release; refusing to prune"
     repo="${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}"
-    for image_repo in ${PRUNE_IMAGE_REPOS:-${repo}/app ${repo}/tools}; do
+    for image_repo in ${PRUNE_IMAGE_REPOS:-${repo}/app ${repo}/tools ${repo}/backup}; do
       docker image ls "${image_repo}" --format '{{"{{"}}.Repository}}:{{"{{"}}.Tag}}' | while read -r ref; do
         tag="${ref##*:}"
         if [ "${tag}" = "${keep_current}" ] || [ "${tag}" = "${keep_previous}" ]; then continue; fi

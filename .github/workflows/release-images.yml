@@ -61,6 +61,7 @@ jobs:
           {
             echo "app=${repo}/app"
             echo "tools=${repo}/tools"
+            echo "backup=${repo}/backup"
             echo "base=${repo}/base"
           } >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v3
@@ -75,7 +76,8 @@ jobs:
         id: existing
         run: |
           if docker buildx imagetools inspect "${{ steps.names.outputs.app }}:${GITHUB_SHA}" > /dev/null 2>&1 \
-            && docker buildx imagetools inspect "${{ steps.names.outputs.tools }}:${GITHUB_SHA}" > /dev/null 2>&1; then
+            && docker buildx imagetools inspect "${{ steps.names.outputs.tools }}:${GITHUB_SHA}" > /dev/null 2>&1 \
+            && docker buildx imagetools inspect "${{ steps.names.outputs.backup }}:${GITHUB_SHA}" > /dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -130,10 +132,35 @@ jobs:
           tags: ${{ steps.names.outputs.tools }}:${{ github.sha }}
           cache-from: type=gha,scope=tools
           cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=tools,mode=max' || '' }}
+      # The backup job image (Optional piece `backup`, docs/optional-pieces/backups.md); built for every release so the
+      # piece can be switched on later without a rebuild.
+      - name: Build and push backup image
+        id: push-backup
+        if: steps.existing.outputs.exists != 'true'
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: backup
+          push: true
+          tags: ${{ steps.names.outputs.backup }}:${{ github.sha }}
+          cache-from: type=gha,scope=backup
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=backup,mode=max' || '' }}
+      - name: Build and push backup image (retry once after a failed push)
+        # Same first-push retry as above.
+        if: steps.push-backup.outcome == 'failure'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: backup
+          push: true
+          tags: ${{ steps.names.outputs.backup }}:${{ github.sha }}
+          cache-from: type=gha,scope=backup
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=backup,mode=max' || '' }}
       - name: Alias the version tag to the SHA image digest
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          for image in "${{ steps.names.outputs.app }}" "${{ steps.names.outputs.tools }}"; do
+          for image in "${{ steps.names.outputs.app }}" "${{ steps.names.outputs.tools }}" "${{ steps.names.outputs.backup }}"; do
             scripts/ops/ghcr-retry.sh docker buildx imagetools create --tag "${image}:${GITHUB_REF_NAME}" "${image}:${GITHUB_SHA}"
           done
 

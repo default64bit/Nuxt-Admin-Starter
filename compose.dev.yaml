@@ -24,6 +24,12 @@ services:
   migrate: *dev-node
   seed: *dev-node
   monitoring-db-init: *dev-node
+  # The backup job is a plain PostgreSQL-based image, not the Node dev image.
+  backup:
+    build:
+      context: .
+      target: backup
+    image: nuxt-admin-starter-dev-backup:local
 
 volumes:
   node-modules:

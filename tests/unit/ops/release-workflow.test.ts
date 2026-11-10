@@ -24,14 +24,14 @@ describe("release-images workflow", () => {
     expect(workflow).toContain("if: ${{ !(inputs.skip_ci && github.ref == 'refs/heads/main') }}");
     expect(workflow).toContain("if: ${{ !cancelled() && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}");
     expect(workflow.match(/runs-on: \$\{\{ inputs\.runner \|\| 'ubuntu-24\.04' \}\}/g)).toHaveLength(2);
-    expect(workflow.match(/cache-to: \$\{\{ inputs\.runner != 'self-hosted' && 'type=gha,scope=\w+,mode=max' \|\| '' \}\}/g)).toHaveLength(4);
+    expect(workflow.match(/cache-to: \$\{\{ inputs\.runner != 'self-hosted' && 'type=gha,scope=\w+,mode=max' \|\| '' \}\}/g)).toHaveLength(6);
   });
 
   it("pushes runtime and tools images tagged only by the full commit SHA, and aliases a version tag to the same digest", () => {
     expect(workflow).toMatch(/target: runtime[\s\S]*?tags: \$\{\{ steps\.names\.outputs\.app \}\}:\$\{\{ github\.sha \}\}/);
     expect(workflow).toMatch(/target: tools[\s\S]*?tags: \$\{\{ steps\.names\.outputs\.tools \}\}:\$\{\{ github\.sha \}\}/);
     expect(workflow).not.toMatch(/:latest|type=raw|type=ref|type=edge|latest=true/);
-    expect(workflow).toMatch(/for image in "\$\{\{ steps\.names\.outputs\.app \}\}" "\$\{\{ steps\.names\.outputs\.tools \}\}"; do/);
+    expect(workflow).toMatch(/for image in "\$\{\{ steps\.names\.outputs\.app \}\}" "\$\{\{ steps\.names\.outputs\.tools \}\}" "\$\{\{ steps\.names\.outputs\.backup \}\}"; do/);
     expect(workflow).toMatch(/ghcr-retry\.sh docker buildx imagetools create --tag "\$\{image\}:\$\{GITHUB_REF_NAME\}" "\$\{image\}:\$\{GITHUB_SHA\}"/);
   });
 
@@ -46,7 +46,7 @@ describe("release-images workflow", () => {
   it("mirrors the pinned base images before building, and retries each build once after a failed push", () => {
     expect(workflow).toContain('scripts/ops/copy-base-images.sh "${{ steps.names.outputs.base }}"');
     expect(workflow.indexOf("copy-base-images.sh")).toBeLessThan(workflow.indexOf("Build and push runtime image"));
-    for (const target of ["runtime", "tools"]) {
+    for (const target of ["runtime", "tools", "backup"]) {
       expect(workflow).toMatch(new RegExp(`id: push-${target}\\n\\s+if: steps\\.existing\\.outputs\\.exists != 'true'\\n\\s+continue-on-error: true`));
       expect(workflow).toContain(`if: steps.push-${target}.outcome == 'failure'`);
     }

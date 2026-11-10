@@ -39,6 +39,10 @@ A service in an Optional piece's profile must never be required by an always-on 
 
 With `monitoring` in `COMPOSE_PROFILES`, `docker compose up` also runs `monitoring-db-init` (a one-shot job that creates GlitchTip's own role and database on the shared PostgreSQL) and then `glitchtip` on `127.0.0.1:${GLITCHTIP_HOST_PORT}`. `just monitoring-db-ensure` and `just monitoring-up` run them on their own. After first start, create the GlitchTip admin and a project in its UI and put the project's DSN in `NUXT_PUBLIC_GLITCHTIP_DSN` (browser; also adds the CSP report endpoint) and, optionally, `NUXT_GLITCHTIP_SERVER_DSN` (server; may use the internal `glitchtip` host and falls back to the public DSN). The SDK is initialised only when a DSN is set. Removal checklist: `docs/optional-pieces/glitchtip.md`.
 
+## Database backups (profile `backup`)
+
+With `backup` in `COMPOSE_PROFILES`, `docker compose up` also runs the `backup` service: a nightly `pg_dump -Fc` to the off-host bucket named by `BACKUP_S3_*` (14 days kept; the database only). It is built locally from the `backup` stage of the `Dockerfile` in the dev stack and pulled from the registry in production. Without `BACKUP_S3_*` it logs a warning and idles, so a fresh copy boots and passes CI with no destination. `just backup-now`, `just backup-status`, `just backup-list` and `just backup-restore <key>` run the job once; the restore goes into a new scratch database. The restore drill is in [Monitoring, backups and TLS](monitoring-backups-tls.md); the removal checklist is `docs/optional-pieces/backups.md`.
+
 ## Compose layout
 
 `compose.yaml` is the shared base; `compose.dev.yaml` and `compose.prod.yaml` are overlays chosen by the `stack` variable in the justfile (`dev`, or `prod` when `NUXT_APP_ENV=production`; `STACK` overrides). The Compose project name is the repository slug.
