@@ -74,9 +74,10 @@ test("the list: newest first, 20 per page, search, filters and chips", async ({ 
   await expect(page).toHaveURL(/status=closed/);
   await expect(rows(page)).toHaveCount(1);
   await pick(page, "Status", "All statuses");
+  await expect(rows(page)).toHaveCount(20);
   await pick(page, "Priority", "High");
-  await expect(rows(page)).toHaveCount(1);
   await expect(rows(page).first()).toContainText("progress job");
+  await expect(rows(page)).toHaveCount(1);
   await pick(page, "Priority", "All priorities");
   await pick(page, "Assignee", "Unassigned");
   await expect(page).toHaveURL(/assignee=none/);
