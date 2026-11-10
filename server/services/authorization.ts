@@ -6,6 +6,8 @@ import type { ResolvedSession } from "./session.service";
 /** What a permission-guarded handler hands to services. */
 export interface AdminActor {
   userId: string;
+  /** The session making the request (a phone change keeps this one and ends the others). */
+  sessionId: string;
   /** Holds the `super` Role (read per request); only a super actor may act on `super`. */
   isSuper: boolean;
   permissions: readonly string[];
@@ -17,6 +19,7 @@ const forbidden = () => new DomainError(403, "Forbidden", "forbidden");
 
 const toActor = (session: ResolvedSession): AdminActor => ({
   userId: session.userId,
+  sessionId: session.sessionId,
   isSuper: session.isSuper,
   permissions: session.permissions,
   has: (permission) => session.permissions.includes(permission),

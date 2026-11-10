@@ -35,3 +35,13 @@ export async function deleteSentBefore(db: Executor, before: Date): Promise<numb
   const rows = await db.delete(otpSendEvents).where(lt(otpSendEvents.sentAt, before)).returning({ id: otpSendEvents.id });
   return rows.length;
 }
+
+export async function recentSendTimesForUser(db: Executor, userId: string, since: Date): Promise<Date[]> {
+  const rows = await db
+    .select({ sentAt: otpSendEvents.sentAt })
+    .from(otpSendEvents)
+    .where(and(eq(otpSendEvents.userId, userId), gte(otpSendEvents.sentAt, since)))
+    .orderBy(desc(otpSendEvents.sentAt))
+    .limit(MAX_ROWS);
+  return rows.map((row) => row.sentAt);
+}

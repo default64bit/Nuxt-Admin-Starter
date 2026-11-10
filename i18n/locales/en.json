@@ -104,6 +104,47 @@
     "forbidden": {
       "title": "You don't have access to this.",
       "body": "Your Permissions don't include it. Ask an administrator if you need it."
+    },
+    "account": {
+      "title": "My account",
+      "menuLabel": "My account",
+      "loading": "Loading your account",
+      "loadFailed": "We couldn't load your account.",
+      "givenName": {
+        "label": "Given name"
+      },
+      "familyName": {
+        "label": "Family name"
+      },
+      "phone": {
+        "label": "Phone",
+        "change": "Change",
+        "changeLabel": "Change phone number"
+      },
+      "save": "Save",
+      "saved": "Your name was saved.",
+      "saveFailed": "We couldn't save your changes. Please try again.",
+      "errors": {
+        "required": "This field is required.",
+        "tooLong": "Use at most 50 characters.",
+        "controlCharacters": "Remove characters that can't be shown.",
+        "invalid": "Enter a valid name."
+      },
+      "phoneChange": {
+        "title": "Change phone number",
+        "description": "We'll send a code to the new number. Your number changes only after you enter it.",
+        "codeTitle": "Enter the code",
+        "label": "New phone number",
+        "send": "Send code",
+        "current": "This is already your number",
+        "verify": "Change number",
+        "otherDevices": "You stay signed in here. Other devices are signed out.",
+        "inUse": {
+          "title": "This number belongs to another account",
+          "body": "Use a different number."
+        },
+        "success": "Your phone number was changed."
+      }
     }
   },
   "error": {

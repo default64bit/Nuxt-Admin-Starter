@@ -20,3 +20,7 @@ key from this list when it is approved.
 
 - every key under `admin.shell`, `admin.nav` and `admin.forbidden`
 - `error.forbidden.*` and `error.backToAdmin`
+
+## My account
+
+- every key under `admin.account` (`title`, `menuLabel`, `phone.*`, `errors.*`, `phoneChange.*` and the rest)

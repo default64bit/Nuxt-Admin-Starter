@@ -242,4 +242,4 @@ Everything under `/api/v1/auth/**` and `/api/_auth/**` is `private, no-store`. S
 
 - Persian copy for the sign-in page is a draft until the owner approves it (`i18n/unapproved.md`).
 - A small timing difference between active and other accounts (the skipped provider call) is accepted.
-- Phone change from My account reuses `otp_challenges` (purpose `phone_change`) and `otp_send_events` and arrives with the My account page.
+- Phone change from My account reuses `otp_challenges` (purpose `phone_change`) and `otp_send_events`; it is specified in `.specs/users-and-roles/spec.md`.

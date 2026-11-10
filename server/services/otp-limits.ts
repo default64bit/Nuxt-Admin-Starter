@@ -19,6 +19,9 @@ export const IP_LIMITS: readonly RollingLimit[] = [
   { windowSeconds: 86_400, max: 100 },
 ];
 
+/** At most this many phone-change code sends per signed-in user per hour. */
+export const PHONE_CHANGE_USER_LIMITS: readonly RollingLimit[] = [{ windowSeconds: 3600, max: 5 }];
+
 /** Longest window across all limits: how far back send events have to be read. */
 export const LONGEST_WINDOW_SECONDS = 86_400;
 

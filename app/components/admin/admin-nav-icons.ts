@@ -16,5 +16,7 @@ export const ADMIN_NAV_ICONS: Record<string, Component> = {
 };
 
 /** Tabler icon per user-menu link key (`ADMIN_USER_MENU_LINKS`); a link without one gets the generic account icon. */
-export const ADMIN_USER_MENU_ICONS: Record<string, Component> = {};
+export const ADMIN_USER_MENU_ICONS: Record<string, Component> = {
+  "my-account": IconUserCircle,
+};
 export const DEFAULT_USER_MENU_ICON: Component = IconUserCircle;

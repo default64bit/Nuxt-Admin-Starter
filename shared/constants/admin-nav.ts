@@ -51,7 +51,9 @@ export interface AdminUserMenuLink {
   routeName: string;
   path: string;
 }
-export const ADMIN_USER_MENU_LINKS: readonly AdminUserMenuLink[] = [];
+export const ADMIN_USER_MENU_LINKS: readonly AdminUserMenuLink[] = [
+  { key: "my-account", labelKey: "admin.account.menuLabel", routeName: "admin-account", path: "/admin/account" },
+];
 
 /** The tint hue (HSL degrees) of each section's page-title tile, keyed by nav item key. */
 export const ADMIN_NAV_HUES: Readonly<Record<string, number>> = {

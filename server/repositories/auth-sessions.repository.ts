@@ -1,4 +1,4 @@
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, ne, or } from "drizzle-orm";
 import type { Executor } from "../database/types";
 import { authSessions, users } from "../database/schema";
 
@@ -55,6 +55,16 @@ export async function revokeAllForUser(db: Executor, userId: string, reason: str
     .update(authSessions)
     .set({ revokedAt: at, revokedReason: reason })
     .where(and(eq(authSessions.userId, userId), isNull(authSessions.revokedAt)))
+    .returning({ id: authSessions.id });
+  return rows.length;
+}
+
+/** Revokes every live session of an account except one (a phone change keeps the session that made it). */
+export async function revokeAllForUserExcept(db: Executor, userId: string, keepSessionId: string, reason: string, at: Date): Promise<number> {
+  const rows = await db
+    .update(authSessions)
+    .set({ revokedAt: at, revokedReason: reason })
+    .where(and(eq(authSessions.userId, userId), ne(authSessions.id, keepSessionId), isNull(authSessions.revokedAt)))
     .returning({ id: authSessions.id });
   return rows.length;
 }

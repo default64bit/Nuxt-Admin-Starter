@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   IP_LIMITS,
+  PHONE_CHANGE_USER_LIMITS,
   PHONE_LIMITS,
   resendRetryAfter,
   rollingLimitRetryAfter,
@@ -58,5 +59,10 @@ describe("rollingLimitRetryAfter", () => {
     expect(rollingLimitRetryAfter(thirty, NOW, IP_LIMITS)).toBe(3600 - 39);
     const hundred = Array.from({ length: 100 }, (_, i) => ago(4000 + i * 100));
     expect(rollingLimitRetryAfter(hundred, NOW, IP_LIMITS)).toBe(86_400 - (4000 + 99 * 100));
+  });
+
+  it("caps phone-change sends at 5 per User per hour", () => {
+    expect(rollingLimitRetryAfter([10, 70, 130, 190].map(ago), NOW, PHONE_CHANGE_USER_LIMITS)).toBeNull();
+    expect(rollingLimitRetryAfter([10, 70, 130, 190, 250].map(ago), NOW, PHONE_CHANGE_USER_LIMITS)).toBe(3350);
   });
 });
