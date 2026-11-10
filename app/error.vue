@@ -9,7 +9,10 @@ const localePath = useLocalePath();
 const { direction } = useRootAttributes();
 useFontPreload();
 
-const kind = computed(() => (props.error.statusCode === 404 ? "notFound" : "generic"));
+const kind = computed(() => (props.error.statusCode === 404 ? "notFound" : props.error.statusCode === 403 ? "forbidden" : "generic"));
+useHead({ title: () => `${t(`error.${kind.value}.title`)} · ${t("app.name")}` });
+// A signed-in User denied a page (403) goes back into the panel; everything else goes to the landing page.
+const home = computed(() => (kind.value === "forbidden" ? localePath("/admin") : localePath("/")));
 </script>
 
 <template>
@@ -23,11 +26,11 @@ const kind = computed(() => (props.error.statusCode === 404 ? "notFound" : "gene
           <h1 class="text-2xl font-semibold">{{ t(`error.${kind}.title`) }}</h1>
           <p class="text-muted-foreground">{{ t(`error.${kind}.description`) }}</p>
           <NuxtLink
-            :to="localePath('/')"
+            :to="home"
             class="bg-primary text-primary-foreground focus-visible:ring-ring/50 rounded-md px-5 py-2.5 text-sm font-medium outline-none focus-visible:ring-3"
             @click="clearError()"
           >
-            {{ t("error.backHome") }}
+            {{ kind === "forbidden" ? t("error.backToAdmin") : t("error.backHome") }}
           </NuxtLink>
         </div>
       </section>

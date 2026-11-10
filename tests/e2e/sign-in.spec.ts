@@ -1,7 +1,7 @@
-import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { createAdminAccount, type AdminAccount } from "./support/admin-session";
-import { gotoHydrated, settleAnimations } from "./support/page";
+import { expectNoAxeViolations } from "./support/axe";
+import { gotoHydrated } from "./support/page";
 import { expect, test } from "./support/test";
 
 // Admin sign-in end to end (.specs/authentication/spec.md): phone, SMS code (the mock adapter fills it in test
@@ -19,12 +19,6 @@ test.beforeEach(async () => {
 test.afterEach(async () => {
   await account.cleanup();
 });
-
-async function expectNoAxeViolations(page: Page) {
-  await settleAnimations(page);
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
-  expect(results.violations.map((violation) => `${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).join(", ")}`)).toEqual([]);
-}
 
 /** Types the phone, presses Enter, waits for the five filled boxes of the code step and returns their digits. */
 async function requestCode(page: Page, input: string) {
@@ -53,9 +47,10 @@ test("@cross-browser a guest is sent to sign-in, signs in with a phone code, ret
   await expect(page).toHaveURL(/sign-in/);
   await page.getByRole("button", { name: CONTINUE }).click();
   await expect(page).toHaveURL(/\/en\/admin$/);
-  await expect(page.getByTestId("admin-user-name")).toContainText("Ada");
+  await page.locator('[data-slot="admin-user-menu-trigger"]').click();
+  await expect(page.locator('[data-slot="admin-user-label"]')).toHaveText("Ada");
 
-  await page.getByTestId("sign-out").click();
+  await page.locator('[data-slot="admin-sign-out"]').click();
   await expect(page).toHaveURL(/\/en\/sign-in$/);
   await expect(page.locator("[data-sonner-toast]").filter({ hasText: /signed out/i })).toBeVisible();
   expect(await page.evaluate(() => fetch("/api/v1/auth/session").then((r) => r.json()))).toEqual({ loggedIn: false });
@@ -89,7 +84,7 @@ test("an unknown number gets the same code step and a wrong-code answer, never a
 test("a session that ended says so on sign-in", async ({ page }) => {
   await account.signIn(page);
   await gotoHydrated(page, "/en/admin");
-  await expect(page.getByTestId("admin-user-name")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Dashboard");
 
   // 31 minutes without a request: the 30-minute idle limit has passed.
   await account.ageSessions(31);

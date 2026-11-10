@@ -77,11 +77,33 @@
         }
       }
     },
-    "placeholder": {
-      "title": "Admin",
-      "welcome": "Welcome, {name}.",
-      "welcomeAnonymous": "You are signed in.",
-      "signOut": "Sign out"
+    "shell": {
+      "userFallback": "Account",
+      "userMenu": "Account menu",
+      "backToHome": "Back to home page",
+      "signOut": "Sign out",
+      "signOutFailed": "Couldn't sign out. Please try again.",
+      "toggleSidebar": "Toggle sidebar",
+      "pageError": "This page failed to load.",
+      "retry": "Retry",
+      "menu": "Admin menu"
+    },
+    "nav": {
+      "groups": {
+        "dashboard": "Dashboard",
+        "people": "People",
+        "system": "System"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "roles": "Roles",
+        "auditLog": "Audit log"
+      }
+    },
+    "forbidden": {
+      "title": "You don't have access to this.",
+      "body": "Your Permissions don't include it. Ask an administrator if you need it."
     }
   },
   "error": {
@@ -93,7 +115,12 @@
       "title": "Something went wrong",
       "description": "An unexpected error occurred. Please try again."
     },
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "forbidden": {
+      "title": "Access denied",
+      "description": "You don't have permission to open this page."
+    },
+    "backToAdmin": "Back to the admin panel"
   },
   "auth": {
     "signedOut": "You have been signed out.",

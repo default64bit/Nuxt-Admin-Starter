@@ -15,4 +15,8 @@ key from this list when it is approved.
 ## Sign-in
 
 - every key under `auth` (`signedOut`, `sessionEnded.*`, `signIn.*`)
-- every key under `admin.placeholder` (replaced by the admin shell)
+
+## Admin shell
+
+- every key under `admin.shell`, `admin.nav` and `admin.forbidden`
+- `error.forbidden.*` and `error.backToAdmin`
