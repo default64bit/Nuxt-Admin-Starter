@@ -1,6 +1,161 @@
 # users-and-roles
 
-Living spec. Requirements describe observable outcomes; scenarios are GIVEN / WHEN / THEN. Decisions behind them: `.specs/decision-log.md`, ADR-0010 (sessions, one-time codes) and ADR-0021 (the `SmsProvider` seam). Sign-in and the session policy are in `.specs/authentication/spec.md`; the frame around the pages is in `.specs/admin-shell/spec.md`.
+Living spec. Requirements describe observable outcomes; scenarios are GIVEN / WHEN / THEN. Decisions behind them: the "Access" section of `.specs/decision-log.md`, ADR-0010 (sessions and authorization), ADR-0008 (Zod at the boundary), ADR-0009 (API conventions). Sign-in and sessions are in `.specs/authentication/spec.md`, the frame the pages live in is in `.specs/admin-shell/spec.md`.
+
+This file holds three parts: the **Permission catalogue and Roles** (below, built by the Roles page slice), **Users** (to be added by the Users pages slice) and **My account** (last, built by the My account slice). Phase: MVP.
+
+## Purpose
+
+Access to the panel is shaped by Roles. A Permission is a key defined in code; a Role is a named set of Permissions made in the panel; a User holds one or more Roles and may do what the union of their Roles allows. A User with `manage-roles` creates and edits Roles in a two-pane editor that groups Permissions and refuses sets that cannot work. The `super` Role always exists, always holds every Permission and cannot be changed.
+
+## Data
+
+Entities exist since the accounts baseline (`server/database/schema/identity.ts`); this part adds no schema.
+
+- `roles`: `id`, `name` (unique, and unique again on `lower(btrim(name))`), `is_super` (at most one row true), `created_at`, `updated_at`. `updated_at` is the Role's version.
+- `permissions`: `key` (primary key), seeded from the catalogue by the production seed, add-only.
+- `role_permissions`: `(role_id, permission_key)` primary key; deleting a Role deletes its rows; a database trigger refuses to change the `super` Role's rows.
+- `user_roles`: `(user_id, role_id)`; the foreign key to `roles` is `restrict`, so a held Role cannot be deleted.
+
+A Role's Permission set is replaced as a whole on save and written as a difference inside one transaction that first locks the Role row.
+
+## Requirements
+
+### Requirement: Permissions are a code-defined catalogue with groups and prerequisites
+
+The catalogue (`shared/constants/permissions.ts`, `permission-catalog.ts`) has seven keys in three groups: users (`view-users`, `create-users`, `edit-users`, `disable-users`), roles (`view-roles`, `manage-roles`) and audit (`view-audit-log`). Each key has a group, an entry in the prerequisite map (an empty list is a decision) and an `fa`/`en` label and hint under `admin.permissions.*`; the catalogue completeness test fails until all exist. Prerequisites: the user actions need `view-users`; `manage-roles` needs `view-roles`. Permissions are never created or edited in the panel. The next seed run inserts a new key and grants it to `super`; it never removes a key.
+
+#### Scenario: A Project adds a Permission
+
+- **WHEN** a developer adds the key, its group, its prerequisite entry and both labels
+- **THEN** the editor offers it in its group, the server accepts it in a Role, and the next seed run grants it to `super`
+
+### Requirement: The Roles list shows Roles with counts
+
+`GET /api/v1/admin/roles` and the page `/admin/roles` MUST list Roles 20 per page, the `super` Role first, then by name ignoring case, then id. Each row has the name, how many Permissions the Role holds (as "n of total"), how many Users hold it and when it was last updated. The search box filters by a contains-match on the name, ignoring case, treating `%` and `_` literally; the search and the page live in the URL. A Role named `super` shows as "Super role" with a badge. Without results the page says so and offers to clear the filter. "New role" shows only to a User holding `manage-roles`. A row opens the Role page.
+
+#### Scenario: Listing
+
+- **GIVEN** the `super` Role and Roles named `zeta`, `Alpha` and `beta`
+- **WHEN** a User with `view-roles` opens the list
+- **THEN** the rows read Super role, Alpha, beta, zeta, and the `super` row says "7 of 7"
+
+#### Scenario: Searching
+
+- **GIVEN** Roles `Support_team` and `Finance`
+- **WHEN** the User searches `_`
+- **THEN** only `Support_team` is listed and the URL holds `q=_`
+
+### Requirement: A Role is created and edited in the two-pane Role page
+
+`/admin/roles/new` and `/admin/roles/<id>` MUST show the name field, the Permission editor and, for an existing Role, its members (name and phone, each linking to the User). The Permission editor is two panes: the groups as navigation at inline-start (a scrolling row below `md`), each with an "n/m" count, and the selected group's Permissions as labelled switches with a hint, plus an "Allow all in group" / "Clear group" button. The page tracks unsaved edits: Save is enabled only for a valid change, Reset returns to the stored Role, and leaving with unsaved edits asks first. After a create the Role page opens; after a save the User's own session refreshes at once.
+
+The name is trimmed, 2 to 40 characters, in any script, and unique ignoring case and surrounding spaces (`400 validation_failed` with `name: too_short | too_long`, `409 duplicate_name` on the `name` field). The body names each Permission at most once and only catalogue keys (`unknown`, `duplicate`). A Role may hold no Permission.
+
+#### Scenario: Creating a Role
+
+- **GIVEN** a User with `manage-roles` on `/admin/roles/new`
+- **WHEN** they enter "Support", switch on "Edit users" and save
+- **THEN** "View users" is switched on with it, the Role is created holding both, and the Role page opens
+
+#### Scenario: A duplicate name
+
+- **GIVEN** a Role "Support"
+- **WHEN** a User saves another Role named " support "
+- **THEN** the name field says a Role with this name exists, and nothing is stored
+
+#### Scenario: A stale save
+
+- **GIVEN** two Users have the same Role open and the first saves
+- **WHEN** the second saves
+- **THEN** the answer is `409 stale_version` carrying the Role as it is now, the page reloads it and says it was changed by someone else
+
+#### Scenario: A save that changes nothing
+
+- **WHEN** a User saves a Role with the stored name and Permissions
+- **THEN** nothing is written and the Role's version does not move
+
+### Requirement: Prerequisites are enforced in the editor and on the server
+
+Switching a Permission on MUST also switch on everything it needs, directly or through other keys. A Permission another switched-on Permission needs MUST stay on, with its switch disabled and a line naming the Permissions that need it. "Allow all in group" also switches on what the group needs in other groups; "Clear group" keeps any key that a Permission outside the group needs. Independently of the UI, `POST` and `PUT` MUST answer `422 permission_prerequisites` with `missing: [{ key, needs }]` for a set that lacks a prerequisite, and write nothing. The server never adds keys silently.
+
+#### Scenario: Turning on a dependent Permission
+
+- **WHEN** a User switches on "Manage roles"
+- **THEN** "View roles" switches on, and its switch is disabled with "Can't turn off: needed by Manage roles"
+
+#### Scenario: A client that skips the editor
+
+- **WHEN** a request saves `["manage-roles"]`
+- **THEN** the answer is `422 permission_prerequisites` listing `{ key: "manage-roles", needs: "view-roles" }`
+
+### Requirement: Only a super User acts on `super`, and nobody changes it
+
+The `super` Role MUST show every switch on and disabled, its name unchangeable and no Save, Reset or Delete, with a note that it always holds every Permission. In the service, `PUT` or `DELETE` on the `super` Role answers `403 super_required` to an actor who does not hold `super` and `409 super_role_protected` to one who does; nothing is written either way. The database refuses any rename, `is_super` change, deletion or change to its Permission rows too. Reading it is open to `view-roles`. No Role can be named like `super` (`409 duplicate_name`).
+
+#### Scenario: A non-super User tries to reduce `super`
+
+- **GIVEN** a User holding `manage-roles` but not `super`
+- **WHEN** they `PUT` the `super` Role with fewer Permissions
+- **THEN** the answer is `403 super_required` and the Role is unchanged
+
+#### Scenario: A super User tries the same
+
+- **GIVEN** a User holding `super`
+- **WHEN** they `PUT` or `DELETE` the `super` Role
+- **THEN** the answer is `409 super_role_protected` and the Role is unchanged
+
+### Requirement: A Role in use is not deleted
+
+`DELETE /api/v1/admin/roles/<id>?expectedUpdatedAt=…` MUST delete a Role that no User holds, with its Permission rows, after a confirm in the page. While any User holds it the answer is `409 in_use` with the member count, and the page says how many Users hold it. A holder added while the request runs still makes the foreign key refuse it. An old version answers `409 stale_version`, an unknown id `404`.
+
+#### Scenario: Deleting a held Role
+
+- **GIVEN** a Role held by two Users
+- **WHEN** a User confirms its deletion
+- **THEN** the Role stays and the page says "Can't delete: 2 users hold this role. Remove it from them first."
+
+### Requirement: Editing your own access asks first
+
+The Role page MUST know whether the User holds the Role and which of its Permissions they hold through no other Role. Saving a held Role that would remove such a Permission MUST first ask "Remove your own access?" listing what would be lost, with "Keep editing" and "Save anyway".
+
+#### Scenario: Removing your own `manage-roles`
+
+- **GIVEN** a User whose only source of `manage-roles` is the Role they edit
+- **WHEN** they switch it off and save
+- **THEN** the dialog lists "Manage roles"; "Keep editing" saves nothing, "Save anyway" saves and the page becomes read-only
+
+### Requirement: Role changes take effect by the next request
+
+A change to a Role's Permissions applies to every holder at their next server request, without ending any session (the gate reads Permissions per request).
+
+### Requirement: The Roles routes check the Permission on the server
+
+Every route MUST call its guard before anything else: `GET` list and `GET` one need `view-roles`; `POST`, `PUT` and `DELETE` need `manage-roles`; `GET /api/v1/admin/options/roles` (every Role, lean, with whether the asker is super; for pickers and the Users filter) needs `view-users` or `view-roles`. Without a session the answer is `401 unauthenticated`; with a session lacking the key `403 forbidden`. A malformed id is `404`. The pages `/admin/roles` and `/admin/roles/<id>` need `view-roles`, `/admin/roles/new` needs `manage-roles`; without it the page answers 403 and the menu has no entry. A User with `view-roles` only sees every Role page read-only, with a note. A read or write that comes back 403 while the page is open shows the "Access denied" alert in place.
+
+#### Scenario: A viewer cannot write
+
+- **GIVEN** a User holding `view-roles` only
+- **WHEN** they `POST` a Role
+- **THEN** the answer is `403 forbidden`, and the Role page shows disabled switches with "You can view roles but not change them."
+
+### Requirement: The Roles pages are accessible, in both locales and directions
+
+The list, the Role page (including the `super` Role and the dialogs) MUST have no axe violations (WCAG 2 A/AA and 2.1 A/AA) in `fa` and `en`, render right-to-left in `fa` and left-to-right in `en` with logical properties, and work on a phone, where the group navigation becomes a scrolling row.
+
+## Constitution check
+
+- II (authenticated): every Roles route and page needs a session and a Permission.
+- IV (security): Zod on every body, query and id; the server decides, the UI only mirrors; parameterized queries; the `super` Role is protected in the service and in the database.
+- VI (data models first): no new tables; the columns and invariants used are listed under Data.
+- VIII (Vue Query): the pages read and write through `useAdminRoles`; the Role page keeps the edited copy in the page and does not mirror remote data into Pinia.
+
+## Assumptions
+
+- Role create, change and delete leave no audit events yet; the audit slice adds `role.create`, `role.update` (name before/after, added and removed keys) and `role.delete` inside the service transactions.
+- Roles are given to Users from the Users pages; the member links on the Role page point at the User page added by that slice.
+- The list has a Table view only; the Cards view of ADR-0027 is adopted when the list views slice ships `AdminCardList`.
+- Persian copy under `admin.roles` is a draft until the owner approves it (`i18n/unapproved.md`).
 
 ## My account
 

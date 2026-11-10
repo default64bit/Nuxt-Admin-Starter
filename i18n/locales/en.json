@@ -77,6 +77,88 @@
         }
       }
     },
+    "roles": {
+      "superName": "Super role",
+      "superBadge": "Super role",
+      "newButton": "New role",
+      "newTitle": "New role",
+      "loadingName": "Role",
+      "searchLabel": "Search roles",
+      "searchPlaceholder": "Search by name",
+      "clearFilters": "Clear filters",
+      "columns": {
+        "name": "Name",
+        "permissions": "Permissions",
+        "members": "Members",
+        "updated": "Last updated"
+      },
+      "noResults": {
+        "title": "No roles match",
+        "description": "Try a different search."
+      },
+      "listError": "Roles could not be loaded.",
+      "loadError": "This role could not be loaded.",
+      "noName": "No name",
+      "save": "Save role",
+      "reset": "Reset",
+      "superNote": "The Super role always has every permission. It cannot be renamed, reduced or deleted.",
+      "viewOnly": "You can view roles but not change them.",
+      "fields": {
+        "name": "Role name"
+      },
+      "editor": {
+        "groups": "Permission groups",
+        "count": "{on}/{total}",
+        "countOf": "{on} of {total}",
+        "allowGroup": "Allow all in group",
+        "clearGroup": "Clear group",
+        "neededBy": "Can't turn off: needed by {names}"
+      },
+      "members": {
+        "title": "Members",
+        "hint": "Roles are given to people from their user page",
+        "none": "No one holds this role."
+      },
+      "deleteBlocked": "Can't delete: {count} user holds this role. Remove it from them first.|Can't delete: {count} users hold this role. Remove it from them first.",
+      "delete": {
+        "button": "Delete role",
+        "title": "Delete {name}?",
+        "description": "The role is removed. This cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "ownAccess": {
+        "title": "Remove your own access?",
+        "description": "Saving takes these permissions away from you:",
+        "keep": "Keep editing",
+        "saveAnyway": "Save anyway"
+      },
+      "unsaved": {
+        "title": "Discard your changes?",
+        "description": "This role has changes that are not saved.",
+        "keep": "Keep editing",
+        "discard": "Discard changes"
+      },
+      "errors": {
+        "nameShort": "Use at least {min} characters",
+        "nameLong": "Use at most {max} characters",
+        "duplicateName": "A role with this name already exists"
+      },
+      "notFound": {
+        "title": "Role not found",
+        "description": "There is no role with this id.",
+        "back": "Back to roles"
+      },
+      "toast": {
+        "created": "Role created",
+        "saved": "Role saved",
+        "deleted": "Role deleted",
+        "stale": "This role was changed by someone else. It was reloaded.",
+        "superProtected": "The Super role can't be changed.",
+        "saveFailed": "The role could not be saved. Try again.",
+        "deleteFailed": "The role could not be deleted. Try again."
+      }
+    },
     "shell": {
       "userFallback": "Account",
       "userMenu": "Account menu",

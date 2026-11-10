@@ -24,3 +24,7 @@ key from this list when it is approved.
 ## My account
 
 - every key under `admin.account` (`title`, `menuLabel`, `phone.*`, `errors.*`, `phoneChange.*` and the rest)
+
+## Roles page
+
+- every key under `admin.roles`
