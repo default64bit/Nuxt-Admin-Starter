@@ -310,6 +310,103 @@
       "title": "You don't have access to this.",
       "body": "Your Permissions don't include it. Ask an administrator if you need it."
     },
+    "auditLog": {
+      "groups": {
+        "people": "People",
+        "account": "My account",
+        "auth": "Sign-in",
+        "system": "System",
+        "other": "Other"
+      },
+      "outcome": {
+        "denied": "Denied",
+        "failed": "Failed"
+      },
+      "actor": {
+        "system": "System"
+      },
+      "changes": {
+        "count": "No recorded changes | 1 change | {count} changes"
+      },
+      "reason": "“{reason}”",
+      "feedLabel": "Audit events",
+      "empty": "No audit events yet.",
+      "loadError": "The audit log could not be loaded.",
+      "retry": "Try again",
+      "actions": {
+        "userCreate": "User created",
+        "userUpdate": "User names changed",
+        "userRoles": "User roles changed",
+        "userDisable": "User disabled",
+        "userEnable": "User re-enabled",
+        "roleCreate": "Role created",
+        "roleUpdate": "Role updated",
+        "roleDelete": "Role deleted",
+        "accountUpdate": "Own names changed",
+        "accountChangePhone": "Own phone number changed",
+        "authSignIn": "Signed in",
+        "authSignOut": "Signed out",
+        "auditAttemptsSuppressed": "Further refused attempts not recorded"
+      },
+      "navLabel": "Previous and next audit events",
+      "previous": "Previous",
+      "next": "Next",
+      "details": {
+        "toggle": "Details",
+        "loading": "Loading details",
+        "error": "The details could not be loaded.",
+        "retry": "Try again",
+        "none": "No recorded changes.",
+        "showAll": "Show all {count} changes",
+        "key": "Action key",
+        "group": "Group",
+        "entity": "Entity",
+        "requestId": "Request ID",
+        "noRequestId": "No request ID",
+        "noId": "—",
+        "from": "{field}: {from} → {to}",
+        "value": "{field}: {value}",
+        "added": "Added: {value}",
+        "removed": "Removed: {value}",
+        "yes": "Yes",
+        "no": "No",
+        "empty": "—",
+        "open": {
+          "user": "Open user",
+          "role": "Open role"
+        }
+      },
+      "fields": {
+        "givenName": "Given name",
+        "familyName": "Family name",
+        "phone": "Phone",
+        "status": "Status",
+        "name": "Name",
+        "roles": "Roles",
+        "permissions": "Permissions",
+        "added": "Role",
+        "removed": "Role",
+        "method": "Method",
+        "route": "Route",
+        "reasonCode": "Reason",
+        "windowHours": "Window (hours)",
+        "cap": "Cap"
+      },
+      "filters": {
+        "searchLabel": "Search by entity ID or request ID",
+        "searchPlaceholder": "Entity ID or request ID",
+        "groupLabel": "Action group",
+        "allGroups": "All groups",
+        "actorLabel": "Actor",
+        "allActors": "All actors",
+        "from": "From",
+        "to": "To",
+        "clearFrom": "Clear From day",
+        "clearTo": "Clear To day",
+        "clearFilters": "Clear filters",
+        "noMatch": "No events match these filters."
+      }
+    },
     "account": {
       "title": "My account",
       "menuLabel": "My account",

@@ -11,6 +11,8 @@ export interface AdminActor {
   /** Holds the `super` Role (read per request); only a super actor may act on `super`. */
   isSuper: boolean;
   permissions: readonly string[];
+  /** The request id (set by the guards), written into audit events as their correlation id. */
+  requestId?: string;
   has(key: PermissionKey): boolean;
 }
 

@@ -36,3 +36,7 @@ key from this list when it is approved.
 ## Dashboard
 
 - every key under `admin.dashboard`
+
+## Audit log
+
+- every key under `admin.auditLog`

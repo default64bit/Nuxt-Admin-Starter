@@ -1,5 +1,6 @@
 import { send, setResponseHeader, setResponseStatus, type H3Event } from "h3";
 import { PRIVATE_CACHE_CONTROL, isPrivatePagePath } from "../shared/utils/route-rules";
+import { recordRefusedAdminAttempt } from "./utils/admin-attempts";
 import { isApiV1Path, toApiErrorBody } from "./utils/api-error";
 import { requestLogger } from "./utils/logger";
 
@@ -35,6 +36,9 @@ export default async function apiErrorHandler(error: unknown, event: H3Event) {
     const message = error instanceof Error ? error.message : "unknown error";
     requestLogger(event).error("api request failed", { statusCode: body.statusCode, error: message });
   }
+
+  // A signed-in User refused on a mutating admin route leaves a best-effort `denied` audit event; it never changes the answer.
+  if (body.statusCode === 403 || body.statusCode === 409) await recordRefusedAdminAttempt(event, body);
 
   setResponseStatus(event, body.statusCode, body.statusMessage);
   setResponseHeader(event, "cache-control", "private, no-store");

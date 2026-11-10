@@ -18,11 +18,14 @@ export async function insert(
   return row!;
 }
 
-export async function revokeByTokenHash(db: Executor, tokenHash: string, reason: string, at: Date) {
-  await db
+/** Revokes the session behind the token if it is still live and returns its User, or null when nothing changed. */
+export async function revokeByTokenHash(db: Executor, tokenHash: string, reason: string, at: Date): Promise<{ userId: string } | null> {
+  const [row] = await db
     .update(authSessions)
     .set({ revokedAt: at, revokedReason: reason })
-    .where(and(eq(authSessions.tokenHash, tokenHash), isNull(authSessions.revokedAt)));
+    .where(and(eq(authSessions.tokenHash, tokenHash), isNull(authSessions.revokedAt)))
+    .returning({ userId: authSessions.userId });
+  return row ?? null;
 }
 
 export async function touch(db: Executor, id: string, lastSeenAt: Date, idleExpiresAt: Date) {

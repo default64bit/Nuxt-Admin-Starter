@@ -5,7 +5,7 @@ import { requireSignedIn } from "../../../../utils/require-auth";
 
 // Saves the signed-in User's own two names; nothing else about the account can be changed here.
 export default defineEventHandler(async (event) => {
-  const { userId } = await requireSignedIn(event);
+  const { userId, requestId } = await requireSignedIn(event);
   const body = await parseBody(event, accountUpdateSchema);
-  return updateAccountNames({ db: useDb(), userId, ...body });
+  return updateAccountNames({ db: useDb(), userId, requestId, ...body });
 });

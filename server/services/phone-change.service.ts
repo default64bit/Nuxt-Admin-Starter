@@ -7,6 +7,7 @@ import * as challenges from "../repositories/otp-challenges.repository";
 import * as sendEvents from "../repositories/otp-send-events.repository";
 import * as users from "../repositories/users.repository";
 import { DomainError, serviceUnavailable, tooManyRequests, validationFailed } from "../utils/domain-errors";
+import { recordAudit } from "./admin-audit.service";
 import { generateOtpCode, MAX_OTP_ATTEMPTS } from "./auth.service";
 import {
   IP_LIMITS,
@@ -41,6 +42,9 @@ export interface PhoneChangeRequestArgs {
   /** HMAC of the caller's IP; the raw address never reaches the service. */
   ipHash: string;
 }
+
+/** `+989123456789` -> `+98•••••6789`: enough to tell two numbers apart, not enough to dial. */
+const maskPhone = (phone: string) => `${phone.slice(0, 3)}•••••${phone.slice(-4)}`;
 
 const currentPhone = () => validationFailed({ phone: ["current_phone"] });
 
@@ -131,6 +135,8 @@ export interface PhoneChangeVerifyArgs {
   phone: string;
   /** Five ASCII digits. */
   code: string;
+  /** The request id, written into the audit event as its correlation id. */
+  requestId?: string | undefined;
 }
 
 export interface PhoneChangeVerifyDeps {
@@ -191,6 +197,8 @@ export async function verifyPhoneChange(args: PhoneChangeVerifyArgs, deps: Phone
       return failed("otp_incorrect");
     }
 
+    const account = await users.findPhoneById(tx, args.userId);
+    if (!account) throw new DomainError(401, "Unauthorized", "unauthenticated");
     const holder = await users.findByPhone(tx, args.phone);
     if (holder?.id === args.userId) {
       await challenges.invalidate(tx, challenge.id, at);
@@ -213,6 +221,12 @@ export async function verifyPhoneChange(args: PhoneChangeVerifyArgs, deps: Phone
     await challenges.consume(tx, challenge.id, at);
     await challenges.invalidateUserPhoneChanges(tx, args.userId, at);
     await sessions.revokeAllForUserExcept(tx, args.userId, args.sessionId, "phone_changed", at);
+    // Both numbers are masked: the log says that the number changed, not what it was.
+    await recordAudit(
+      tx,
+      { actorUserId: args.userId, correlationId: args.requestId },
+      { action: "account.change_phone", entityType: "user", entityId: args.userId, changeSummary: { old: { phone: maskPhone(account.phoneE164) }, new: { phone: maskPhone(args.phone) } } },
+    );
     return { kind: "ok" };
   });
 

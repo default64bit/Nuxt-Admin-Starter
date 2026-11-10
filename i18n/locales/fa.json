@@ -310,6 +310,103 @@
       "title": "به این بخش دسترسی ندارید.",
       "body": "دسترسی‌های شما شامل آن نیست. در صورت نیاز از یکی از مدیران بخواهید."
     },
+    "auditLog": {
+      "groups": {
+        "people": "افراد",
+        "account": "حساب من",
+        "auth": "ورود",
+        "system": "سامانه",
+        "other": "سایر"
+      },
+      "outcome": {
+        "denied": "رد شد",
+        "failed": "ناموفق"
+      },
+      "actor": {
+        "system": "سامانه"
+      },
+      "changes": {
+        "count": "بدون تغییر ثبت‌شده | ۱ تغییر | {count} تغییر"
+      },
+      "reason": "«{reason}»",
+      "feedLabel": "رویدادهای ثبت‌شده",
+      "empty": "هنوز رویدادی ثبت نشده است.",
+      "loadError": "گزارش رویدادها بارگذاری نشد.",
+      "retry": "تلاش دوباره",
+      "actions": {
+        "userCreate": "کاربر ایجاد شد",
+        "userUpdate": "نام کاربر تغییر کرد",
+        "userRoles": "نقش‌های کاربر تغییر کرد",
+        "userDisable": "کاربر غیرفعال شد",
+        "userEnable": "کاربر دوباره فعال شد",
+        "roleCreate": "نقش ایجاد شد",
+        "roleUpdate": "نقش ویرایش شد",
+        "roleDelete": "نقش حذف شد",
+        "accountUpdate": "نام خود را تغییر داد",
+        "accountChangePhone": "شمارهٔ تلفن خود را تغییر داد",
+        "authSignIn": "وارد شد",
+        "authSignOut": "خارج شد",
+        "auditAttemptsSuppressed": "تلاش‌های ردشدهٔ بعدی ثبت نمی‌شوند"
+      },
+      "navLabel": "رویدادهای قبلی و بعدی",
+      "previous": "قبلی",
+      "next": "بعدی",
+      "details": {
+        "toggle": "جزئیات",
+        "loading": "در حال بارگذاری جزئیات",
+        "error": "جزئیات بارگذاری نشد.",
+        "retry": "تلاش دوباره",
+        "none": "تغییری ثبت نشده است.",
+        "showAll": "نمایش هر {count} تغییر",
+        "key": "کلید رویداد",
+        "group": "گروه",
+        "entity": "موجودیت",
+        "requestId": "شناسهٔ درخواست",
+        "noRequestId": "بدون شناسهٔ درخواست",
+        "noId": "—",
+        "from": "{field}: {from} ← {to}",
+        "value": "{field}: {value}",
+        "added": "افزوده: {value}",
+        "removed": "حذف‌شده: {value}",
+        "yes": "بله",
+        "no": "خیر",
+        "empty": "—",
+        "open": {
+          "user": "باز کردن کاربر",
+          "role": "باز کردن نقش"
+        }
+      },
+      "fields": {
+        "givenName": "نام",
+        "familyName": "نام خانوادگی",
+        "phone": "تلفن",
+        "status": "وضعیت",
+        "name": "نام",
+        "roles": "نقش‌ها",
+        "permissions": "مجوزها",
+        "added": "نقش",
+        "removed": "نقش",
+        "method": "روش",
+        "route": "مسیر",
+        "reasonCode": "دلیل",
+        "windowHours": "بازه (ساعت)",
+        "cap": "سقف"
+      },
+      "filters": {
+        "searchLabel": "جستجو با شناسهٔ موجودیت یا درخواست",
+        "searchPlaceholder": "شناسهٔ موجودیت یا درخواست",
+        "groupLabel": "گروه رویداد",
+        "allGroups": "همهٔ گروه‌ها",
+        "actorLabel": "عامل",
+        "allActors": "همهٔ عامل‌ها",
+        "from": "از",
+        "to": "تا",
+        "clearFrom": "پاک کردن روز آغاز",
+        "clearTo": "پاک کردن روز پایان",
+        "clearFilters": "پاک کردن فیلترها",
+        "noMatch": "رویدادی با این فیلترها پیدا نشد."
+      }
+    },
     "account": {
       "title": "حساب من",
       "menuLabel": "حساب من",

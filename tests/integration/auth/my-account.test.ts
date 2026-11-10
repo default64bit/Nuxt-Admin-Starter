@@ -78,6 +78,12 @@ dbSuite("my account", async () => {
     expect(await saved.json()).toEqual({ givenName: "سارا", familyName: "احمدی نیا", phone: OWN });
     expect((await (await send("GET", "/api/v1/auth/session", undefined, cookie)).json()).user).toMatchObject({ givenName: "سارا", familyName: "احمدی نیا" });
 
+    // The change is audited with before and after values (the seeded names were Ada Lovelace).
+    expect((await q("SELECT change_summary FROM admin_audit_events WHERE action = 'account.update' AND actor_user_id = $1", [ownerId]))[0]!.change_summary).toEqual({
+      old: { givenName: "Ada", familyName: "Lovelace" },
+      new: { givenName: "سارا", familyName: "احمدی نیا" },
+    });
+
     const empty = await send("PATCH", "/api/v1/admin/account", { givenName: "  ", familyName: "X" }, cookie);
     expect(empty.status).toBe(400);
     expect((await empty.json()).data.fieldErrors).toEqual({ givenName: ["required"] });
@@ -99,6 +105,8 @@ dbSuite("my account", async () => {
     expect(verified.status).toBe(200);
     expect(await verified.json()).toEqual({ phone: NEW });
     expect(await phoneOfOwner()).toBe(NEW);
+    // Audited with both numbers masked.
+    expect((await q("SELECT change_summary FROM admin_audit_events WHERE action = 'account.change_phone' AND actor_user_id = $1", [ownerId]))[0]!.change_summary).toEqual({ old: { phone: `${OWN.slice(0, 3)}•••••${OWN.slice(-4)}` }, new: { phone: `${NEW.slice(0, 3)}•••••${NEW.slice(-4)}` } });
     expect(await q("SELECT code FROM otp_challenges WHERE phone_e164 = $1", [NEW])).toEqual([{ code: null }]);
     expect((await q("SELECT revoked_reason FROM auth_sessions WHERE id = $1", [other]))[0]!.revoked_reason).toBe("phone_changed");
     expect((await (await send("GET", "/api/v1/auth/session", undefined, cookie)).json()).loggedIn).toBe(true);

@@ -2,6 +2,7 @@ import type { Db, Executor } from "../database/types";
 import { permissionKeysForUser } from "../repositories/access.repository";
 import * as sessions from "../repositories/auth-sessions.repository";
 import type { SessionPayload } from "../../shared/utils/session-state";
+import { recordAudit } from "./admin-audit.service";
 import { idleExpiryFrom, isSessionLive, shouldWriteActivity } from "./session-policy";
 
 /** What a valid session resolves to, judged against the database on every request. */
@@ -46,9 +47,13 @@ export function toSessionPayload(session: ResolvedSession | null): SessionPayloa
  * Revokes the session behind this token (reason `logout`). Idempotent: an unknown, expired or already-revoked
  * token, or no token at all, changes nothing. Other sessions of the account stay valid.
  */
-export async function logout(tokenHash: string | null, deps: { db: Db; now: () => Date }): Promise<void> {
+export async function logout(tokenHash: string | null, deps: { db: Db; now: () => Date; requestId?: string | undefined }): Promise<void> {
   if (!tokenHash) return;
-  await sessions.revokeByTokenHash(deps.db, tokenHash, "logout", deps.now());
+  // A sign-out that ended a live session leaves an audit event; repeating it, or signing out as a guest, leaves none.
+  await deps.db.transaction(async (tx) => {
+    const revoked = await sessions.revokeByTokenHash(tx, tokenHash, "logout", deps.now());
+    if (revoked) await recordAudit(tx, { actorUserId: revoked.userId, correlationId: deps.requestId }, { action: "auth.sign_out", entityType: "user", entityId: revoked.userId });
+  });
 }
 
 /** Signs an account out everywhere, used by disablement. */

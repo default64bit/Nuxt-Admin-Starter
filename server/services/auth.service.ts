@@ -7,6 +7,7 @@ import * as challenges from "../repositories/otp-challenges.repository";
 import * as sendEvents from "../repositories/otp-send-events.repository";
 import * as users from "../repositories/users.repository";
 import { DomainError, serviceUnavailable, tooManyRequests } from "../utils/domain-errors";
+import { recordAudit } from "./admin-audit.service";
 import {
   IP_LIMITS,
   LONGEST_WINDOW_SECONDS,
@@ -126,6 +127,8 @@ export interface VerifyOtpArgs {
   userAgent: string | null;
   /** Hash of the session token this browser already holds, if any; it is revoked on success. */
   currentTokenHash?: string | null;
+  /** The request id, written into the audit event as its correlation id. */
+  requestId?: string | undefined;
 }
 
 export interface VerifiedSession {
@@ -196,6 +199,7 @@ export async function verifyOtp(args: VerifyOtpArgs, deps: VerifyOtpDeps): Promi
       absoluteExpiresAt,
       userAgent: args.userAgent ? args.userAgent.slice(0, 255) : null,
     });
+    await recordAudit(tx, { actorUserId: user.id, correlationId: args.requestId }, { action: "auth.sign_in", entityType: "user", entityId: user.id, changeSummary: { method: "otp" } });
     return { kind: "ok", session: { token, tokenHash, userId: user.id, absoluteExpiresAt } };
   });
 

@@ -17,6 +17,7 @@ import * as repository from "../repositories/admin-users.repository";
 import * as accounts from "../repositories/users.repository";
 import { containsPattern } from "../repositories/name-search";
 import { DomainError, defaultAdminProtected, invalidTransition, ownAccount, phoneInUse, staleVersion, superRequired, validationFailed } from "../utils/domain-errors";
+import { recordAudit, type AuditContext } from "./admin-audit.service";
 import type { AdminActor } from "./authorization";
 import { revokeAllSessions } from "./session.service";
 
@@ -26,7 +27,10 @@ export interface AdminUserDeps {
 }
 
 /** Who is acting: their id (own-account rules) and whether they hold `super` (read per request by the guard). */
-export type UserActor = Pick<AdminActor, "userId" | "isSuper">;
+export type UserActor = Pick<AdminActor, "userId" | "isSuper" | "requestId">;
+
+/** The audit context of a write: who acted, and the request it came in on. */
+const auditOf = (actor: UserActor): AuditContext => ({ actorUserId: actor.userId, correlationId: actor.requestId });
 
 const notFound = () => new DomainError(404, "Not Found", "not_found");
 const unknownRoles = () => validationFailed({ roleIds: ["unknown"] });
@@ -108,13 +112,19 @@ async function lockAssignableRoles(tx: Tx, actor: UserActor, roleIds: string[]) 
  */
 export async function createUser(deps: AdminUserDeps, actor: UserActor, body: UserCreateBody): Promise<AdminUserDetail> {
   try {
-    // One transaction per write: the audit slice records its event inside it.
+    // One transaction per write: the audit event is recorded inside it.
     const id = await deps.db.transaction(async (tx) => {
       await lockAssignableRoles(tx, actor, body.roleIds);
       const existing = await accounts.findByPhone(tx, body.phone);
       if (existing) throw phoneInUse(existing.id);
       const created = await repository.insertUser(tx, { phoneE164: body.phone, givenName: body.givenName, familyName: body.familyName });
       await repository.addUserRoles(tx, created, body.roleIds, actor.userId);
+      await recordAudit(tx, auditOf(actor), {
+        action: "user.create",
+        entityType: "user",
+        entityId: created,
+        changeSummary: { givenName: body.givenName ?? null, familyName: body.familyName ?? null, roles: body.roleIds },
+      });
       return created;
     });
     return await getAdminUser(deps, actor.userId, id);
@@ -145,6 +155,12 @@ export async function updateUserNames(deps: AdminUserDeps, actor: UserActor, id:
     const account = await lockedAt(tx, actor, id, body.expectedUpdatedAt);
     if (account.givenName === body.givenName && account.familyName === body.familyName) return;
     await repository.touchUser(tx, id, { givenName: body.givenName, familyName: body.familyName });
+    // Only the fields that changed are recorded, before and after.
+    const old: Record<string, string | null> = {};
+    const next: Record<string, string | null> = {};
+    if (account.givenName !== body.givenName) [old.givenName, next.givenName] = [account.givenName, body.givenName];
+    if (account.familyName !== body.familyName) [old.familyName, next.familyName] = [account.familyName, body.familyName];
+    await recordAudit(tx, auditOf(actor), { action: "user.update", entityType: "user", entityId: id, changeSummary: { old, new: next } });
   });
   return getAdminUser(deps, actor.userId, id);
 }
@@ -175,6 +191,12 @@ export async function setUserRoles(deps: AdminUserDeps, actor: UserActor, id: st
       actor.userId,
     );
     await repository.touchUser(tx, id);
+    await recordAudit(tx, auditOf(actor), {
+      action: "user.roles",
+      entityType: "user",
+      entityId: id,
+      changeSummary: { added: body.roleIds.filter((roleId) => !before.includes(roleId)), removed: before.filter((roleId) => !body.roleIds.includes(roleId)) },
+    });
   });
   return getAdminUser(deps, actor.userId, id);
 }
@@ -201,6 +223,7 @@ export async function disableUser(deps: AdminUserDeps, actor: UserActor, id: str
     await lockedForStatusChange(tx, actor, id, body, "active");
     await repository.touchUser(tx, id, { status: "disabled" });
     await revokeAllSessions(id, "account_disabled", { db: tx, now });
+    await recordAudit(tx, auditOf(actor), { action: "user.disable", entityType: "user", entityId: id, changeSummary: { old: { status: "active" }, new: { status: "disabled" } } });
   });
   return getAdminUser(deps, actor.userId, id);
 }
@@ -210,6 +233,7 @@ export async function enableUser(deps: AdminUserDeps, actor: UserActor, id: stri
   await deps.db.transaction(async (tx) => {
     await lockedForStatusChange(tx, actor, id, body, "disabled");
     await repository.touchUser(tx, id, { status: "active" });
+    await recordAudit(tx, auditOf(actor), { action: "user.enable", entityType: "user", entityId: id, changeSummary: { old: { status: "disabled" }, new: { status: "active" } } });
   });
   return getAdminUser(deps, actor.userId, id);
 }

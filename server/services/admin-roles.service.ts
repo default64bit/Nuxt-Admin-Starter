@@ -5,6 +5,7 @@ import type { AdminRoleDetail, AdminRoleList, AdminRoleRow, RoleCreateBody, Role
 import * as repository from "../repositories/admin-roles.repository";
 import { containsPattern } from "../repositories/name-search";
 import { DomainError, duplicateName, inUse, staleVersion, superRequired, superRoleProtected, validationFailed } from "../utils/domain-errors";
+import { recordAudit, type AuditContext } from "./admin-audit.service";
 import { assertPermissionPrerequisites, type AdminActor } from "./authorization";
 
 export interface RoleDeps {
@@ -12,7 +13,10 @@ export interface RoleDeps {
 }
 
 /** Who is acting on a Role: only a super actor may act on the `super` Role (and even they cannot change it). */
-export type RoleActor = Pick<AdminActor, "userId" | "isSuper">;
+export type RoleActor = Pick<AdminActor, "userId" | "isSuper" | "requestId">;
+
+/** The audit context of a write: who acted, and the request it came in on. */
+const auditOf = (actor: RoleActor): AuditContext => ({ actorUserId: actor.userId, correlationId: actor.requestId });
 
 const notFound = () => new DomainError(404, "Not Found", "not_found");
 
@@ -89,10 +93,11 @@ function translate(error: unknown): never {
 export async function createRole(deps: RoleDeps, actor: RoleActor, body: RoleCreateBody): Promise<AdminRoleDetail> {
   assertPermissionPrerequisites(body.permissions);
   try {
-    // One transaction per write: the audit slice records its event inside it.
+    // One transaction per write: the audit event is recorded inside it.
     const id = await deps.db.transaction(async (tx) => {
       const created = await repository.insertRole(tx, body.name);
       await repository.addPermissions(tx, created, body.permissions);
+      await recordAudit(tx, auditOf(actor), { action: "role.create", entityType: "role", entityId: created, changeSummary: { name: body.name, permissions: inCatalogOrder(body.permissions) } });
       return created;
     });
     return await detailOf(deps.db, id, actor.userId);
@@ -131,6 +136,12 @@ export async function saveRole(deps: RoleDeps, actor: RoleActor, id: string, bod
       await repository.removePermissions(tx, id, removed);
       await repository.addPermissions(tx, id, added);
       await repository.touchRole(tx, id, body.name);
+      await recordAudit(tx, auditOf(actor), {
+        action: "role.update",
+        entityType: "role",
+        entityId: id,
+        changeSummary: { ...(current.name === body.name ? {} : { old: { name: current.name }, new: { name: body.name } }), added, removed },
+      });
     });
   } catch (error) {
     return translate(error);
@@ -144,7 +155,9 @@ export async function deleteRole(deps: RoleDeps, actor: RoleActor, id: string, e
     await deps.db.transaction(async (tx) => {
       const current = await lockedAt(tx, actor, id, expectedUpdatedAt);
       if (current.memberCount > 0) throw inUse(current.memberCount);
+      const permissionsBefore = await repository.permissionKeysOf(tx, id);
       await repository.deleteRoleRow(tx, id);
+      await recordAudit(tx, auditOf(actor), { action: "role.delete", entityType: "role", entityId: id, changeSummary: { name: current.name, permissions: inCatalogOrder(permissionsBefore) } });
     });
   } catch (error) {
     // A holder added after the member count was read: the foreign key still refuses.

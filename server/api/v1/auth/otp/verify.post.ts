@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const session = await verifyOtp(
-      { phone: body.phone, code: body.code, userAgent: getRequestHeader(event, "user-agent") ?? null, currentTokenHash: await currentTokenHash(event) },
+      { phone: body.phone, code: body.code, userAgent: getRequestHeader(event, "user-agent") ?? null, currentTokenHash: await currentTokenHash(event), requestId: event.context.requestId as string | undefined },
       { db, now, randomBytes },
     );
 
