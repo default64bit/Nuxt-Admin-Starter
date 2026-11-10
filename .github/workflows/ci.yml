@@ -145,6 +145,61 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  # Proves every Optional piece is genuinely Off-able: empty COMPOSE_PROFILES (so only the core Compose service,
+  # PostgreSQL, runs) and none of the Channel or provider keys. The app is built on the host and run in production
+  # mode (`NUXT_APP_ENV=production`) against the Compose database. The `just db-*` recipes run inside the Docker
+  # stack, so this job calls the package scripts they wrap. Without an SMS provider the app still boots (sign-in codes
+  # answer 503), so the smoke check covers liveness, readiness, the landing page and the sign-in page.
+  all-off:
+    name: App boots with every Optional piece Off
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      COMPOSE_PROFILES: ""
+      # Throwaway values for this job only. The *_DOCKER and password keys satisfy Compose interpolation.
+      POSTGRES_PASSWORD: ci-postgres-password
+      APP_DB_PASSWORD: ci-app-password
+      DATABASE_URL_DOCKER: postgres://app:ci-app-password@postgres:5432/app
+      DATABASE_ADMIN_URL_DOCKER: postgres://postgres:ci-postgres-password@postgres:5432/postgres
+      DATABASE_URL: postgres://app:ci-app-password@localhost:5432/app
+      DATABASE_ADMIN_URL: postgres://postgres:ci-postgres-password@localhost:5432/postgres
+      NUXT_DATABASE_URL: postgres://app:ci-app-password@localhost:5432/app
+      NUXT_SESSION_PASSWORD: ci-session-password-0123456789abcdef0123
+      NUXT_IP_HASH_SECRET: ci-ip-hash-secret-0123456789abcdef0123456
+      NUXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just services-up
+      - run: corepack pnpm db:ensure
+      - run: corepack pnpm db:migrate
+      # The production seed only: Permissions and the `super` Role. No Default admin phone is set.
+      - run: corepack pnpm db:seed
+      - run: just build
+      - name: Start the built app
+        env:
+          NUXT_APP_ENV: production
+          NODE_ENV: production
+          NITRO_HOST: 127.0.0.1
+          PORT: "3000"
+        run: nohup node .output/server/index.mjs > app.log 2>&1 &
+      - run: just smoke http://127.0.0.1:3000
+      - name: App log
+        if: failure()
+        run: cat app.log || true
+      - name: Stop the stack
+        if: always()
+        run: docker compose --profile "*" down --volumes --remove-orphans
+
   security:
     name: Dependency audit and secret scan
     runs-on: ubuntu-24.04

@@ -1,0 +1,177 @@
+name: Release images
+
+# Builds the runtime (app) and tools images once per commit after CI passes and pushes them to GHCR tagged with
+# the full commit SHA. The digest-pinned base images (PostgreSQL, Caddy, GlitchTip) are mirrored unchanged into the
+# same namespace by copy-base-images.sh. A version tag (v*) adds an alias to the SAME image digest. On a main push, the
+# last job then queues a GitHub Deployment for the SHA (the release pointer); it never contacts the VPS. The VPS poller
+# pulls that Deployment and runs `just deploy <sha>`. A version-tag run creates no Deployment.
+#
+# In the Starter every merge to main is a release: the tag is created by .github/workflows/starter-release.yml, and a
+# tag pushed with the workflow token starts no workflow, so the push to main is what builds the images. The Starter
+# builds images but queues no Deployment (starter-meta condition in the last job).
+#
+# Manual run (workflow_dispatch): an owner exception for when GitHub-hosted minutes are exhausted. `runner` picks a
+# registered self-hosted runner (no minutes); `skip_ci` (honored on main only) omits the CI gates, so the release is
+# NOT gated by CI. A manual run on main queues the same Deployment as a push. See ADR-0020 "Manual release".
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Where the publish and deploy jobs run (self-hosted needs a registered runner and uses no Actions minutes)
+        type: choice
+        options: [ubuntu-24.04, self-hosted]
+        default: ubuntu-24.04
+      skip_ci:
+        description: Skip the CI gates (main only; the release is then not gated by CI)
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-images-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    # Skipped only for a manual main run that asked for it; every push and tag run, and any manual run elsewhere, gates.
+    if: ${{ !(inputs.skip_ci && github.ref == 'refs/heads/main') }}
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    name: Build and push images
+    needs: ci
+    # `ci` is skipped (never failed) only by the manual exception above; a failed or cancelled CI still blocks.
+    if: ${{ !cancelled() && (needs.ci.result == 'success' || needs.ci.result == 'skipped') }}
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve image names
+        id: names
+        run: |
+          # GHCR repository paths must be lowercase.
+          repo="ghcr.io/${GITHUB_REPOSITORY,,}"
+          {
+            echo "app=${repo}/app"
+            echo "tools=${repo}/tools"
+            echo "base=${repo}/base"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copy pinned base images to GHCR
+        run: scripts/ops/copy-base-images.sh "${{ steps.names.outputs.base }}"
+      - name: Check whether the SHA images already exist
+        id: existing
+        run: |
+          if docker buildx imagetools inspect "${{ steps.names.outputs.app }}:${GITHUB_SHA}" > /dev/null 2>&1 \
+            && docker buildx imagetools inspect "${{ steps.names.outputs.tools }}:${GITHUB_SHA}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Build and push runtime image
+        id: push-runtime
+        if: steps.existing.outputs.exists != 'true'
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: true
+          tags: ${{ steps.names.outputs.app }}:${{ github.sha }}
+          cache-from: type=gha,scope=runtime
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=runtime,mode=max' || '' }}
+      - name: Build and push runtime image (retry once after a failed push)
+        # A new package can deny its first push (write_package) until GHCR links it to the repository.
+        # build-push-action exposes no error text, so retry once after any failure; the GHA cache makes the
+        # rebuild cheap, and a real build error fails again here.
+        if: steps.push-runtime.outcome == 'failure'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: runtime
+          push: true
+          tags: ${{ steps.names.outputs.app }}:${{ github.sha }}
+          cache-from: type=gha,scope=runtime
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=runtime,mode=max' || '' }}
+      - name: Build and push tools image
+        id: push-tools
+        if: steps.existing.outputs.exists != 'true'
+        continue-on-error: true
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: tools
+          push: true
+          tags: ${{ steps.names.outputs.tools }}:${{ github.sha }}
+          cache-from: type=gha,scope=tools
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=tools,mode=max' || '' }}
+      - name: Build and push tools image (retry once after a failed push)
+        # A new package can deny its first push (write_package) until GHCR links it to the repository.
+        # build-push-action exposes no error text, so retry once after any failure; the GHA cache makes the
+        # rebuild cheap, and a real build error fails again here.
+        if: steps.push-tools.outcome == 'failure'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: tools
+          push: true
+          tags: ${{ steps.names.outputs.tools }}:${{ github.sha }}
+          cache-from: type=gha,scope=tools
+          cache-to: ${{ inputs.runner != 'self-hosted' && 'type=gha,scope=tools,mode=max' || '' }}
+      - name: Alias the version tag to the SHA image digest
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          for image in "${{ steps.names.outputs.app }}" "${{ steps.names.outputs.tools }}"; do
+            scripts/ops/ghcr-retry.sh docker buildx imagetools create --tag "${image}:${GITHUB_REF_NAME}" "${image}:${GITHUB_SHA}"
+          done
+
+  deploy:
+    name: Queue the production Deployment
+    # Only after CI (or its manual skip), the base-image copy and all image pushes (the publish job) succeeded. Tag runs create none.
+    needs: [ci, publish]
+    if: ${{ !cancelled() && needs.publish.result == 'success' && (needs.ci.result == 'success' || needs.ci.result == 'skipped') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    permissions:
+      deployments: write
+    env:
+      DEPLOYMENT_ENVIRONMENT: production
+      # starter-meta:start
+      # The Starter queues no Deployment; `just first-run` strips this line, which turns the step below on.
+      STARTER_SKIP_DEPLOYMENT: "true"
+      # starter-meta:end
+    steps:
+      - name: Create the queued Deployment for this SHA
+        if: ${{ env.STARTER_SKIP_DEPLOYMENT != 'true' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner,
+              repo,
+              ref: context.sha,
+              environment: process.env.DEPLOYMENT_ENVIRONMENT,
+              required_contexts: [],
+              auto_merge: false,
+              description: `Release ${context.sha.slice(0, 7)}`,
+            });
+            if (!deployment.id) throw new Error(`Deployment was not created: ${deployment.message ?? "unknown"}`);
+            await github.rest.repos.createDeploymentStatus({
+              owner,
+              repo,
+              deployment_id: deployment.id,
+              state: "queued",
+              description: "Queued by the release workflow",
+            });

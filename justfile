@@ -76,6 +76,10 @@ test:
 build:
     corepack pnpm build
 
+# Smoke check of a running app: liveness, readiness, the landing page and the sign-in page. Needs only curl.
+smoke base_url="http://127.0.0.1:3000":
+    bash scripts/ops/smoke-check.sh {{base_url}}
+
 # Dependency vulnerability audit: fails on any high/critical advisory.
 audit:
     corepack pnpm audit --audit-level high
