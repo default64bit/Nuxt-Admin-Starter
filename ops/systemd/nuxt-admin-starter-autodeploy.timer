@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll GitHub for a queued release every 2 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+Unit=nuxt-admin-starter-autodeploy.service
+
+[Install]
+WantedBy=timers.target

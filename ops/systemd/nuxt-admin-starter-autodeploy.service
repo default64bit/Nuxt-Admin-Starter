@@ -1,0 +1,18 @@
+[Unit]
+Description=Nuxt Admin Starter automatic deployment (one poll of GitHub Deployments)
+Documentation=https://github.com/default64bit/Nuxt-Admin-Starter/blob/main/docs/architecture/vps-runbook.md
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/nuxt-admin-starter
+ExecStart=/srv/nuxt-admin-starter/bin/autodeploy
+# A release pulls images, migrates and runs the smoke check; the timer does not start a new tick while this one runs.
+TimeoutStartSec=30min
+SyslogIdentifier=nuxt-admin-starter-autodeploy
+NoNewPrivileges=true
+PrivateTmp=true
