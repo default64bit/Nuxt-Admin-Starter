@@ -67,6 +67,12 @@ describe.skipIf(!enabled)("compose-check", () => {
     expect(off.output).toMatch(/app: requires "storage" \(profile media\), which is Off/);
   });
 
+  it("fails when an Optional piece's service is not behind its profile", () => {
+    const { status, output } = withOverlay("compose.yaml", (t) => t.replace(/( {2}glitchtip:\n) {4}profiles: \[monitoring\]\n/, "$1"));
+    expect(status).not.toBe(0);
+    expect(output).toMatch(/glitchtip: must sit behind the "monitoring" profile/);
+  });
+
   it("fails on a floating latest tag", () => {
     const { status, output } = withOverlay("compose.yaml", (t) => t.replace(/image: postgres:[^\n]+/, "image: postgres:latest"));
     expect(status).not.toBe(0);

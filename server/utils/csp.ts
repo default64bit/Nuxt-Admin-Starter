@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { parseDsn } from "../../shared/utils/error-capture";
 
 /**
  * Content-hash CSP (ADR-0022). The policy is derived from the rendered HTML itself, so it is the same
@@ -82,18 +83,12 @@ function originOf(value: string | undefined): string | undefined {
 
 /** Origin and security-endpoint URL derived from a Sentry-compatible DSN, or undefined without one. */
 export function reportingFromDsn(dsn: string | undefined): { origin: string; reportUri: string } | undefined {
-  if (!dsn) return undefined;
-  try {
-    const url = new URL(dsn);
-    const projectId = url.pathname.split("/").filter(Boolean).pop();
-    if (!url.username || !projectId) return undefined;
-    return {
-      origin: url.origin,
-      reportUri: `${url.origin}/api/${projectId}/security/?glitchtip_key=${url.username}`,
-    };
-  } catch {
-    return undefined;
-  }
+  const parsed = parseDsn(dsn);
+  if (!parsed) return undefined;
+  return {
+    origin: parsed.origin,
+    reportUri: `${parsed.origin}/api/${parsed.projectId}/security/?glitchtip_key=${parsed.key}`,
+  };
 }
 
 export function buildCsp(hashes: InlineHashes, options: CspOptions = {}): string {

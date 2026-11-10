@@ -35,6 +35,10 @@ The profile `ops` holds the one-shot jobs (`db-ensure`, `migrate`, `seed`). It i
 
 A service in an Optional piece's profile must never be required by an always-on service. If the app needs a piece, the dependency is `required: false` and the app reads the piece's missing configuration as "not configured". `compose-check` enforces this.
 
+## Error tracking (GlitchTip, profile `monitoring`)
+
+With `monitoring` in `COMPOSE_PROFILES`, `docker compose up` also runs `monitoring-db-init` (a one-shot job that creates GlitchTip's own role and database on the shared PostgreSQL) and then `glitchtip` on `127.0.0.1:${GLITCHTIP_HOST_PORT}`. `just monitoring-db-ensure` and `just monitoring-up` run them on their own. After first start, create the GlitchTip admin and a project in its UI and put the project's DSN in `NUXT_PUBLIC_GLITCHTIP_DSN` (browser; also adds the CSP report endpoint) and, optionally, `NUXT_GLITCHTIP_SERVER_DSN` (server; may use the internal `glitchtip` host and falls back to the public DSN). The SDK is initialised only when a DSN is set. Removal checklist: `docs/optional-pieces/glitchtip.md`.
+
 ## Compose layout
 
 `compose.yaml` is the shared base; `compose.dev.yaml` and `compose.prod.yaml` are overlays chosen by the `stack` variable in the justfile (`dev`, or `prod` when `NUXT_APP_ENV=production`; `STACK` overrides). The Compose project name is the repository slug.

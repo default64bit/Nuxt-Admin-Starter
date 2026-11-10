@@ -54,6 +54,14 @@ dev-reset:
     @confirm="${DEV_RESET_CONFIRM:-}"; if [ -z "$confirm" ]; then printf "This deletes ALL local volumes. Type 'nuxt-admin-starter' to continue: "; read -r confirm; fi; if [ "$confirm" != "nuxt-admin-starter" ]; then echo "Aborted; nothing was removed."; exit 1; fi
     docker compose --profile "*" down --volumes --remove-orphans
 
+# GlitchTip (the `monitoring` profile). `just dev`/`just up` start it when COMPOSE_PROFILES lists `monitoring`; these two are
+# for provisioning or starting it on its own. The database step is idempotent and the glitchtip service waits for it.
+monitoring-db-ensure:
+    docker compose run --rm monitoring-db-init
+
+monitoring-up:
+    docker compose --profile monitoring up -d glitchtip
+
 # Quality gates.
 lint:
     corepack pnpm lint

@@ -23,6 +23,7 @@ services:
   db-ensure: *dev-node
   migrate: *dev-node
   seed: *dev-node
+  monitoring-db-init: *dev-node
 
 volumes:
   node-modules:

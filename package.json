@@ -20,6 +20,7 @@
     "db:check": "drizzle-kit check",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx server/database/seed.ts",
+    "monitoring:db:ensure": "node scripts/db/ensure-monitoring-database.mjs",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@nuxtjs/color-mode": "^4.0.1",
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/nuxt": "^1.0.2",
+    "@sentry/nuxt": "^11.11.0",
     "@tabler/icons-vue": "^3.50.0",
     "@tanstack/table-core": "^9.3.1",
     "@tanstack/vue-table": "^9.3.1",

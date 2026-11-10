@@ -9,6 +9,10 @@ const PIECE_PROFILES = ["media", "monitoring", "edge", "backup"];
 const KNOWN_PROFILES = new Set([...PIECE_PROFILES, "ops"]);
 // Services that may publish a port on every interface: the edge proxy, the only public listener.
 const publicServices = new Set(["caddy"]);
+// The services each Optional piece adds. Each must exist and sit behind its piece's profile, so that Off removes it.
+const PIECE_SERVICES = {
+  monitoring: ["glitchtip", "monitoring-db-init"],
+};
 // Services that must always run, whichever Optional pieces are switched off.
 const coreServices = ["postgres", "app"];
 const DEV_IMAGE = "nuxt-admin-starter-dev:";
@@ -111,6 +115,12 @@ function inspect(stack, config, selected) {
   if (stack === "prod" && !services.caddy) errors.push(`[${stack}] caddy service is missing`);
   else if (stack === "prod" && !services.caddy.profiles?.includes("edge")) errors.push(`[${stack}] caddy: must sit behind the edge profile`);
   if (stack === "dev" && services.caddy) errors.push(`[${stack}] caddy must not be part of the dev stack`);
+  for (const [piece, names] of Object.entries(PIECE_SERVICES)) {
+    for (const name of names) {
+      if (!services[name]) errors.push(`[${stack}] expected service "${name}" of the ${piece} piece is missing`);
+      else if (!services[name].profiles?.includes(piece)) errors.push(`[${stack}] ${name}: must sit behind the "${piece}" profile so that Off removes it`);
+    }
+  }
   return errors;
 }
 

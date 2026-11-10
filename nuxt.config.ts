@@ -29,11 +29,24 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
     server: { watch: { ignored: ["**/.claude/**"] } },
+    // Errors only: drop the Sentry SDK's tracing code from the bundles.
+    define: { __SENTRY_TRACING__: false },
     // Pre-bundled so the dev server does not reload the page when it first meets them.
     optimizeDeps: { include: ["@vueuse/core", "reka-ui", "vue-sonner"] },
   },
 
-  modules: ["@nuxt/a11y", "@nuxt/eslint", "@nuxtjs/color-mode", "@nuxtjs/i18n", "@pinia/nuxt", "nuxt-security", "shadcn-nuxt"],
+  modules: ["@nuxt/a11y", "@nuxt/eslint", "@nuxtjs/color-mode", "@nuxtjs/i18n", "@pinia/nuxt", "@sentry/nuxt/module", "nuxt-security", "shadcn-nuxt"],
+
+  // GlitchTip error capture (an Optional piece, ADR-0015): server and browser errors only. The SDK is initialised in
+  // `sentry.{server,client}.config.ts` and only when a DSN is set. Source-map upload, build-time instrumentation
+  // and tracing are off; tracing's browser integration is compiled out below.
+  sentry: {
+    // Vitest loads this config for its Nuxt environment, where the module would only write build output that is not there.
+    ...(process.env.VITEST ? { enabled: false } : {}),
+    sourcemaps: { disable: true },
+    telemetry: false,
+    buildTimeInstrumentation: false,
+  },
 
   // Light/dark is owned by @nuxtjs/color-mode alone: a static pre-paint script reads localStorage and
   // sets `dark` on <html> before first paint. No cookie, so cached HTML never varies per visitor.
@@ -81,6 +94,9 @@ export default defineNuxtConfig({
     // Explicit environment flag (local | test | staging | production); not derived from NODE_ENV.
     appEnv: "local",
     databaseUrl: "",
+    // Server-side error-capture DSN (an Optional piece); empty falls back to `public.glitchtipDsn`. May use the
+    // internal `glitchtip` host.
+    glitchtipServerDsn: "",
     session: {
       password: "",
     },

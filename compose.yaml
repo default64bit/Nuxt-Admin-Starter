@@ -45,6 +45,9 @@ services:
       NUXT_DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?Set NUXT_SESSION_PASSWORD in .env}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
+      # Error capture (the GlitchTip Optional piece): empty means not configured and nothing is sent.
+      NUXT_PUBLIC_GLITCHTIP_DSN: ${NUXT_PUBLIC_GLITCHTIP_DSN:-}
+      NUXT_GLITCHTIP_SERVER_DSN: ${NUXT_GLITCHTIP_SERVER_DSN:-}
     ports:
       - 127.0.0.1:${APP_HOST_PORT:-3000}:3000
     depends_on:
@@ -94,6 +97,48 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  # GlitchTip (Optional piece, profile `monitoring`): self-hosted, Sentry-compatible error tracking in its own logical
+  # database and role on the shared PostgreSQL. The app never waits for it: capture is best effort (ADR-0015).
+  monitoring-db-init:
+    profiles: [monitoring]
+    restart: "no"
+    command: [corepack, pnpm, "monitoring:db:ensure"]
+    environment:
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL_DOCKER:?Set DATABASE_ADMIN_URL_DOCKER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      GLITCHTIP_DB_NAME: ${GLITCHTIP_DB_NAME:-glitchtip}
+      GLITCHTIP_DB_USER: ${GLITCHTIP_DB_USER:-glitchtip_app}
+      GLITCHTIP_DB_PASSWORD: ${GLITCHTIP_DB_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  glitchtip:
+    profiles: [monitoring]
+    image: glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${GLITCHTIP_DB_USER:-glitchtip_app}:${GLITCHTIP_DB_PASSWORD:-}@postgres:5432/${GLITCHTIP_DB_NAME:-glitchtip}
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-}
+      PORT: "8000"
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://127.0.0.1:8000}
+      EMAIL_URL: consolemail://
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-errors@example.com}
+      ENABLE_USER_REGISTRATION: "False"
+      GLITCHTIP_EMBED_WORKER: "True"
+      GLITCHTIP_EVENT_RETENTION_DAYS: ${GLITCHTIP_EVENT_RETENTION_DAYS:-90}
+      ALLOWED_HOSTS: ${GLITCHTIP_ALLOWED_HOSTS:-localhost,127.0.0.1,glitchtip,errors.example.com}
+      CSRF_TRUSTED_ORIGINS: ${GLITCHTIP_DOMAIN:-http://127.0.0.1:8000}
+    ports:
+      - 127.0.0.1:${GLITCHTIP_HOST_PORT:-8000}:8000
+    depends_on:
+      monitoring-db-init:
+        condition: service_completed_successfully
     networks: [backend]
     logging: *logging
 

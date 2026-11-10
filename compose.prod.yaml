@@ -12,6 +12,9 @@ services:
   db-ensure: *tools-image
   migrate: *tools-image
   seed: *tools-image
+  monitoring-db-init: *tools-image
+  glitchtip:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
 
   # Edge proxy (Optional piece, profile `edge`; docs/optional-pieces/caddy.md). Stock Caddy without plugins, the GHCR
   # mirror of ops/caddy/base-images.txt; certificates by HTTP-01/TLS-ALPN-01. With the profile Off nothing here runs
@@ -26,6 +29,8 @@ services:
       # CADDY_ACME_CA is the Let's Encrypt directory; set it to the staging directory in .env for the first issuance only.
       CADDY_ACME_CA: ${CADDY_ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
       # Hosts of other Optional pieces plug in here (see the end of the Caddyfile for the pattern).
+      ERRORS_DOMAIN: ${ERRORS_DOMAIN:-}
+      CADDY_ERRORS_SITE: ${ERRORS_DOMAIN:+/etc/caddy/pieces/errors.caddy}
     ports:
       - 80:80
       - 443:443
@@ -38,6 +43,9 @@ services:
     depends_on:
       app:
         condition: service_healthy
+      glitchtip:
+        condition: service_started
+        required: false
     healthcheck:
       test: [CMD, caddy, validate, --config, /etc/caddy/Caddyfile]
       interval: 30s
