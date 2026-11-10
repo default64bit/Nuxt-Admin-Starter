@@ -448,6 +448,16 @@
         "success": "Your phone number was changed."
       }
     },
+    "strip": {
+      "loadError": "The figures could not be loaded.",
+      "users": {
+        "label": "Users at a glance",
+        "newAccounts": "New accounts, last 30 days",
+        "total": "Total accounts",
+        "disabled": "Disabled accounts",
+        "sparkline": "New accounts per day over the last {days} days: {total} in all"
+      }
+    },
     "dashboard": {
       "title": "Dashboard",
       "grid": "Dashboard modules",

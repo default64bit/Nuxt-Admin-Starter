@@ -251,4 +251,20 @@ dbSuite("Users API", async () => {
     expect(made.status).toBe(201);
     expect(((await made.json()) as Detail).roles).toMatchObject([{ isSuper: true }]);
   });
+
+  it("serves the Users strip to `view-users` only, with the live total and disabled counts", async () => {
+    const path = "/api/v1/admin/analytics/strips/users";
+    const guest = await call(null, "GET", path);
+    expect([guest.status, await codeOf(guest)]).toEqual([401, "unauthenticated"]);
+    const denied = await call(rolesManager.cookie, "GET", path);
+    expect([denied.status, await codeOf(denied)]).toEqual([403, "forbidden"]);
+
+    const [{ total, disabled }] = await q("SELECT count(*)::int AS total, count(*) FILTER (WHERE status = 'disabled')::int AS disabled FROM users");
+    const ok = await call(reader.cookie, "GET", path);
+    expect(ok.status).toBe(200);
+    const strip = (await ok.json()) as { newAccounts: { current: number; previous: number }; sparkline: { day: string; count: number }[]; total: number; disabled: number };
+    expect(strip).toMatchObject({ total, disabled, newAccounts: { current: total, previous: 0 } });
+    expect(strip.sparkline).toHaveLength(30);
+    expect(strip.sparkline.reduce((sum, entry) => sum + entry.count, 0)).toBe(total);
+  });
 });

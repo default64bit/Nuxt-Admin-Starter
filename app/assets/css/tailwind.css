@@ -375,7 +375,8 @@ html.dark {
 :root {
   --dashboard-hue-new-accounts: 100;
 }
-[data-dashboard-module="new-accounts"] {
+[data-dashboard-module="new-accounts"],
+[data-admin-strip="users"] {
   --dashboard-hue: var(--dashboard-hue-new-accounts);
 }
 

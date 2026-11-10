@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ADMIN_NAV_ICONS } from "~/components/admin/admin-nav-icons";
 import AdminSearchInput from "~/components/admin/AdminSearchInput.vue";
 import AdminUserCreateDialog from "~/components/admin/AdminUserCreateDialog.vue";
+import UsersStrip from "~/components/admin/UsersStrip.vue";
 import { useAdminCan } from "~/composables/admin/useAdminCan";
 import { useAdminFormat } from "~/composables/admin/useAdminFormat";
 import { useAdminRoleOptions } from "~/composables/admin/useAdminRoles";
@@ -136,6 +137,8 @@ const columns = computed<ColumnDef<DataTableFeatures, AdminUserRow>[]>(() => [
         </div>
       </template>
     </AdminPageHeader>
+
+    <UsersStrip />
 
     <div v-if="list.isError.value && !list.data.value" role="alert" class="flex flex-col items-start gap-3 rounded-lg border p-4">
       <p class="text-sm font-medium">{{ t("admin.users.loadError") }}</p>

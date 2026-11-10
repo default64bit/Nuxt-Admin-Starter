@@ -62,6 +62,13 @@ test("the list: columns without a type, search, the Status filter, New user only
   await expect(page.getByRole("columnheader")).toHaveText(["Name", "Phone", "Roles", "Status", "Joined", "Last active"]);
   await expect(page.locator('[data-slot="new-user"]')).toBeVisible();
 
+  // The Analytics strip: new accounts with a sparkline and change, the total and the disabled count.
+  const strip = page.locator('[data-admin-strip="users"]');
+  await expect(strip.locator('[data-slot="value-delta-value"]')).toBeVisible();
+  await expect(strip.locator('[data-slot="sparkline"]')).toBeVisible();
+  await expect(strip.locator('[data-slot="strip-total"]')).toHaveText(/^\d+$/);
+  await expect(strip.locator('[data-slot="strip-disabled"]')).toHaveText(/^\d+$/);
+
   await page.getByRole("searchbox", { name: "Search users" }).fill(TAG.toUpperCase());
   await expect(page).toHaveURL(/q=/);
   await expect(rows(page)).toHaveCount(1);
@@ -195,6 +202,7 @@ for (const [prefix, dir, name, newLabel, editLabel] of [
     await gotoHydrated(page, `${prefix}/admin/users`);
     await expect(page.locator("html")).toHaveAttribute("dir", dir);
     await expect(rows(page).first()).toBeVisible();
+    await expect(page.locator('[data-admin-strip="users"] [data-slot="strip-total"]')).toBeVisible();
     await expectNoAxeViolations(page);
     await page.getByRole("button", { name: newLabel }).click();
     await expect(page.locator('[data-slot="user-create-dialog"]')).toBeVisible();

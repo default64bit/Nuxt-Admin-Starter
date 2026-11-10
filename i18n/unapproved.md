@@ -40,3 +40,7 @@ key from this list when it is approved.
 ## Audit log
 
 - every key under `admin.auditLog`
+
+## Analytics strip
+
+- every key under `admin.strip`
