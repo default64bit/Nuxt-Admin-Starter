@@ -140,8 +140,8 @@ cert-status:
     bash scripts/ops/cert-status.sh
 
 # Browsers for the E2E suite. Chromium runs everywhere; Firefox and WebKit are installed by `test-e2e-cross-browser`.
-playwright-install:
-    corepack pnpm exec playwright install chromium
+playwright-install *flags:
+    corepack pnpm exec playwright install {{flags}} chromium
 
 # Playwright against a dev server it starts itself (port E2E_PORT, default 3100) and the database in DATABASE_URL.
 test-e2e:

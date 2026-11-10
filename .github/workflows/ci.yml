@@ -95,6 +95,56 @@ jobs:
       - run: just compose-check
       - run: just test-compose
 
+  # The browser suite, on every run (no change filter). `test-e2e-sharded` gives each of 3 shards its own database
+  # (a clone of a migrated template with the production seed only) and its own server, and retries a failure once:
+  # a test that passes on the retry is reported as flaky (a warning annotation), not hidden. The `@cross-browser`
+  # subset then runs in Firefox and WebKit. The a11y gate is the axe checks inside the specs.
+  e2e:
+    name: Playwright end-to-end tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      # The role that owns the shard databases and the maintenance role that may create them.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just playwright-install --with-deps
+      - run: just test-e2e-sharded 3
+      - run: just test-e2e-cross-browser
+      # The HTML reports, traces and screenshots of every shard, kept only when something failed.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
   security:
     name: Dependency audit and secret scan
     runs-on: ubuntu-24.04

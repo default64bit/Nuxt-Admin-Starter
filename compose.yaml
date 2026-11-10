@@ -45,6 +45,14 @@ services:
       NUXT_DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
       NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?Set NUXT_SESSION_PASSWORD in .env}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
+      NUXT_IP_HASH_SECRET: ${NUXT_IP_HASH_SECRET:?Set NUXT_IP_HASH_SECRET in .env}
+      # Sign-in codes by SMS (.specs/authentication/spec.md): blank provider means mock in local/test and none elsewhere.
+      NUXT_SMS_PROVIDER: ${NUXT_SMS_PROVIDER:-}
+      NUXT_SMS_ALLOW_MOCK_IN_PRODUCTION: ${NUXT_SMS_ALLOW_MOCK_IN_PRODUCTION:-false}
+      NUXT_SMS_TEMPLATE_OTP_FA: ${NUXT_SMS_TEMPLATE_OTP_FA:-}
+      NUXT_SMS_TEMPLATE_OTP_EN: ${NUXT_SMS_TEMPLATE_OTP_EN:-}
+      NUXT_KAVENEGAR_API_KEY: ${NUXT_KAVENEGAR_API_KEY:-}
+      NUXT_KAVENEGAR_TIMEOUT_MS: ${NUXT_KAVENEGAR_TIMEOUT_MS:-10000}
       # Error capture (the GlitchTip Optional piece): empty means not configured and nothing is sent.
       NUXT_PUBLIC_GLITCHTIP_DSN: ${NUXT_PUBLIC_GLITCHTIP_DSN:-}
       NUXT_GLITCHTIP_SERVER_DSN: ${NUXT_GLITCHTIP_SERVER_DSN:-}
