@@ -32,3 +32,7 @@ key from this list when it is approved.
 ## Users pages
 
 - every key under `admin.users`
+
+## Dashboard
+
+- every key under `admin.dashboard`

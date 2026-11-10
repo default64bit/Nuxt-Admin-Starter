@@ -350,6 +350,112 @@
         },
         "success": "Your phone number was changed."
       }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "grid": "Dashboard modules",
+      "empty": "Your role has no Dashboard modules. Your pages are in the menu.",
+      "loadFailed": "Couldn't load your Dashboard",
+      "retry": "Retry",
+      "module": {
+        "updated": "Updated {time}",
+        "refresh": "Refresh",
+        "refreshing": "Refreshing",
+        "loading": "Loading",
+        "error": "Couldn't load",
+        "retry": "Retry"
+      },
+      "range": {
+        "menuLabel": "{module}: range, {range}",
+        "saveFailed": "Couldn't save the range. Please try again.",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7Days": "Last 7 days",
+        "last30Days": "Last 30 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "chartStyle": {
+        "button": "Chart style",
+        "soft": "Soft",
+        "glow": "Glow",
+        "pro": "Pro",
+        "saveFailed": "Couldn't save the chart style. Please try again."
+      },
+      "customize": {
+        "button": "Customize",
+        "bar": "Customize Dashboard",
+        "chooseModules": "Choose modules",
+        "reset": "Reset to default",
+        "resetTitle": "Reset to the default layout?",
+        "resetBody": "This changes your draft only. Your date ranges and Chart style are kept, and nothing is saved until you press Save.",
+        "resetConfirm": "Reset",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saveFailed": "Couldn't save your Dashboard. Please try again.",
+        "stale": "Your Dashboard was changed on another device",
+        "loadLatest": "Load latest",
+        "leaveTitle": "Leave without saving?",
+        "leaveBody": "Your Dashboard changes haven't been saved.",
+        "leaveStay": "Keep editing",
+        "leaveConfirm": "Leave",
+        "toolbar": "Edit {module}",
+        "move": "Move",
+        "moveLabel": "Move {module}",
+        "moveTo": {
+          "start": "Move to start",
+          "earlier": "Move earlier",
+          "later": "Move later",
+          "end": "Move to end"
+        },
+        "sizeLabel": "Size of {module}: {size}",
+        "widths": {
+          "third": "One third",
+          "half": "Half",
+          "full": "Full width"
+        },
+        "fill": "Fill",
+        "fillLabel": "Fill the row with {module}",
+        "remove": "Remove {module}",
+        "grip": "Drag {module} to a new place",
+        "moved": "{module} moved to position {position} of {total}",
+        "removed": "{module} removed",
+        "added": "{module} added at the end",
+        "choose": {
+          "description": "Tick the modules to show on your Dashboard. The previews use sample data, never real data.",
+          "sample": "Sample",
+          "count": "{n} of {total} modules chosen",
+          "done": "Done"
+        }
+      },
+      "newAccounts": {
+        "newAccounts": "New accounts",
+        "total": "Total accounts",
+        "sparkline": "New accounts per day over the last {days} days: {total} in all",
+        "openUsers": "Open users"
+      },
+      "modules": {
+        "newAccounts": "New accounts"
+      },
+      "figure": {
+        "new": "New",
+        "changeUp": "Up {percent}% from the previous period",
+        "changeDown": "Down {percent}% from the previous period",
+        "changeFlat": "No change from the previous period",
+        "changeNew": "New: nothing in the previous period",
+        "changeNone": "No change: nothing in either period",
+        "rate": "{n}%",
+        "points": "{n} pts",
+        "pointsUp": "Up {n} percentage points from the previous period",
+        "pointsDown": "Down {n} percentage points from the previous period"
+      },
+      "sample": {
+        "queue": "Queue {n}",
+        "stage": "Stage {n}",
+        "figure": "Figure",
+        "rate": "Rate {n}"
+      }
     }
   },
   "error": {

@@ -3,3 +3,4 @@ export * from "./enums";
 export * from "./audit";
 export * from "./identity";
 export * from "./seeds";
+export * from "./dashboard";

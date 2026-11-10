@@ -366,3 +366,109 @@ html.dark {
 [data-input-otp] + * {
   pointer-events: all !important;
 }
+
+/*
+ * Dashboard module colours (.specs/admin-dashboard/spec.md "Colour and motion"): one named hue per module, read by the
+ * module card for its tinted icon tile and faint glow. A module adds its line here (the completeness test checks it).
+ * No inline styles.
+ */
+:root {
+  --dashboard-hue-new-accounts: 100;
+}
+[data-dashboard-module="new-accounts"] {
+  --dashboard-hue: var(--dashboard-hue-new-accounts);
+}
+
+/*
+ * Admin chart tokens, Soft style (ADR-0025). Named variables per style and
+ * theme; the canvas reads them with getComputedStyle and redraws when the theme changes. Marks keep 3:1 against
+ * the card; negative values use the destructive hue. Glow has its own set below; Pro adds its own later.
+ */
+:root {
+  --chart-soft-bar: oklch(0.58 0.13 190);
+  --chart-soft-bar-negative: oklch(0.577 0.245 27.3);
+  --chart-soft-hatch: oklch(0.9 0.04 190);
+  --chart-soft-grid: oklch(0.922 0 0);
+  --chart-soft-text: oklch(0.5 0 0);
+  --chart-soft-focus: oklch(0.205 0 0);
+}
+.dark {
+  --chart-soft-bar: oklch(0.76 0.12 190);
+  --chart-soft-bar-negative: oklch(0.704 0.191 22.2);
+  --chart-soft-hatch: oklch(0.3 0.03 190);
+  --chart-soft-grid: oklch(1 0 0 / 12%);
+  --chart-soft-text: oklch(0.78 0 0);
+  --chart-soft-focus: oklch(0.985 0 0);
+}
+
+/*
+ * Glow (ADR-0025): bars that fade into the card (`bar` is the solid end, which keeps 3:1
+ * against the card; `-fade` is where it dissolves), buckets out of focus dimmed, a gradient line (`line-from` to
+ * `line-to`) and a soft halo that exists in dark only (transparent in light), and status pills. Marks and
+ * text keep 3:1 against the card in both themes.
+ */
+:root {
+  --chart-glow-bar: oklch(0.52 0.21 285);
+  --chart-glow-bar-fade: oklch(0.52 0.21 285 / 8%);
+  --chart-glow-bar-dim: oklch(0.52 0.21 285 / 38%);
+  --chart-glow-bar-dim-fade: oklch(0.52 0.21 285 / 4%);
+  --chart-glow-bar-negative: oklch(0.55 0.23 18);
+  --chart-glow-bar-negative-fade: oklch(0.55 0.23 18 / 8%);
+  --chart-glow-hatch: oklch(0.93 0.04 285);
+  --chart-glow-grid: oklch(0.922 0.01 285);
+  --chart-glow-text: oklch(0.5 0.03 285);
+  --chart-glow-focus: oklch(0.3 0.12 285);
+  --chart-glow-line-from: oklch(0.55 0.22 300);
+  --chart-glow-line-to: oklch(0.55 0.15 235);
+  --chart-glow-halo: transparent;
+}
+.dark {
+  --chart-glow-bar: oklch(0.76 0.15 290);
+  --chart-glow-bar-fade: oklch(0.76 0.15 290 / 6%);
+  --chart-glow-bar-dim: oklch(0.76 0.15 290 / 34%);
+  --chart-glow-bar-dim-fade: oklch(0.76 0.15 290 / 3%);
+  --chart-glow-bar-negative: oklch(0.75 0.17 20);
+  --chart-glow-bar-negative-fade: oklch(0.75 0.17 20 / 6%);
+  --chart-glow-hatch: oklch(0.3 0.05 290);
+  --chart-glow-grid: oklch(1 0 0 / 10%);
+  --chart-glow-text: oklch(0.78 0.03 290);
+  --chart-glow-focus: oklch(0.985 0.01 290);
+  --chart-glow-line-from: oklch(0.78 0.16 310);
+  --chart-glow-line-to: oklch(0.8 0.13 220);
+  --chart-glow-halo: oklch(0.78 0.16 300 / 60%);
+}
+
+/*
+ * Pro (ADR-0025): ticker figures with small up/down lines, thin up/down bars over dim
+ * secondary bars, micro bars in tables and thin rings. Green is up, red is down, slate is the secondary series and the
+ * ring/micro-bar ink. Marks and text keep 3:1 against the card in both themes; the ring and micro-bar tracks are decorative.
+ */
+:root {
+  --chart-pro-bar: oklch(0.5 0.14 155);
+  --chart-pro-bar-negative: oklch(0.55 0.22 27);
+  --chart-pro-bar-dim: oklch(0.62 0.03 250);
+  --chart-pro-hatch: oklch(0.93 0.01 250);
+  --chart-pro-grid: oklch(0.922 0 0);
+  --chart-pro-text: oklch(0.5 0.02 250);
+  --chart-pro-focus: oklch(0.25 0.03 250);
+  --chart-pro-ring: oklch(0.45 0.08 250);
+  --chart-pro-track: oklch(0.93 0.01 250);
+}
+.dark {
+  --chart-pro-bar: oklch(0.78 0.16 155);
+  --chart-pro-bar-negative: oklch(0.72 0.19 22);
+  --chart-pro-bar-dim: oklch(0.55 0.03 250);
+  --chart-pro-hatch: oklch(0.3 0.02 250);
+  --chart-pro-grid: oklch(1 0 0 / 12%);
+  --chart-pro-text: oklch(0.78 0.02 250);
+  --chart-pro-focus: oklch(0.985 0 0);
+  --chart-pro-ring: oklch(0.82 0.07 250);
+  --chart-pro-track: oklch(0.3 0.02 250);
+}
+
+/* The chart-like parts outside a canvas follow the Chart style too: Glow draws a change as a status pill outlined with its own text colour (so "lower is better" colours carry over). */
+[data-chart-style="glow"] [data-chart-part="change"] {
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, currentColor 45%, transparent);
+}
