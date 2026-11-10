@@ -8,7 +8,7 @@ import { z } from "zod";
 // holds a `z.array` without `.max()`/`.length()`, unless it is listed below.
 
 /** Response schemas: they parse what the server built, never client input. Add `<file>:<exportName>`. */
-const RESPONSE_SCHEMAS = new Set<string>([]);
+const RESPONSE_SCHEMAS = new Set<string>(["admin-dashboard:dashboardPreferencesSchema", "admin-dashboard:newAccountsSchema"]);
 
 /** Request schemas left uncapped on purpose, with the reason. */
 const UNCAPPED_REQUESTS = new Set<string>([]);

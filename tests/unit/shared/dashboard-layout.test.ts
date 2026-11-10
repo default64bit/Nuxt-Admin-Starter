@@ -44,7 +44,7 @@ describe("the strict save check", () => {
   it("keeps the modules a User cannot see after the visible ones they sent", () => {
     const stored = [entry("hidden-a"), entry("new-accounts")];
     const merged = mergeHiddenEntries([entry("new-accounts", "half")], stored, only("view-users"));
-    expect(merged.map((e) => e.key)).toEqual(["new-accounts"]);
+    expect(merged.map((e) => e.key)).toEqual(["new-accounts", "hidden-a"]);
     expect(mergeHiddenEntries([entry("new-accounts")], [entry("new-accounts", "half")], only())).toEqual([entry("new-accounts", "half")]);
   });
 });

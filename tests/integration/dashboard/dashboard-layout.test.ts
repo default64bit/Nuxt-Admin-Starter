@@ -61,7 +61,7 @@ dbSuite("Dashboard layout", () => {
   it("drops unknown keys on read and from the stored layout on the next Save", async () => {
     const viewer = await actor("+989120000004", ["view-users"]);
     const stored = { version: 1, modules: [{ key: "removed-module", width: "full", fill: false }, { key: "new-accounts", width: "half", fill: true }, { key: "new-accounts", width: "third", fill: false }] };
-    await database.pool.query("INSERT INTO dashboard_preferences (user_id, arrangement, arrangement_updated_at) VALUES ($1, $2, now())", [viewer.userId, JSON.stringify(stored)]);
+    await database.pool.query("INSERT INTO dashboard_preferences (user_id, arrangement, arrangement_updated_at) VALUES ($1, $2, date_trunc('milliseconds', now()))", [viewer.userId, JSON.stringify(stored)]);
 
     const read = await getDashboard({ db: db() }, viewer);
     expect(read.modules).toEqual([{ key: "new-accounts", width: "half", fill: true }]);
