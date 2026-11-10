@@ -1,5 +1,5 @@
 {
-  "id": "dad08fdd-2f71-4726-9cf2-6f65368afe24",
+  "id": "b3b6d8c0-fe60-4d19-9a5d-1de18fdb3aff",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -995,6 +995,77 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dashboard_preferences": {
+      "name": "dashboard_preferences",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "arrangement": {
+          "name": "arrangement",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ranges": {
+          "name": "ranges",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "chart_style": {
+          "name": "chart_style",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'soft'"
+        },
+        "arrangement_updated_at": {
+          "name": "arrangement_updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dashboard_preferences_user_id_users_id_fk": {
+          "name": "dashboard_preferences_user_id_users_id_fk",
+          "tableFrom": "dashboard_preferences",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "dashboard_preferences_chart_style": {
+          "name": "dashboard_preferences_chart_style",
+          "value": "\"dashboard_preferences\".\"chart_style\" IN ('soft', 'glow', 'pro')"
+        }
+      },
       "isRLSEnabled": false
     }
   },
