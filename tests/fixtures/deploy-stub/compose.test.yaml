@@ -23,6 +23,7 @@ services:
   seed: *release
   db-ensure: *release
   monitoring-db-init: *release
+  storage-init: *release
   # `!reset` does not survive a YAML merge key, so each infra service resets its host ports itself: a dry-run must
   # never bind 5432 or 8000 on the host (CI's integration job already has PostgreSQL on 5432).
   postgres:
@@ -34,3 +35,7 @@ services:
   glitchtip:
     <<: *infra
     ports: !reset []
+  rustfs:
+    <<: *infra
+    ports: !reset []
+    volumes: !reset []

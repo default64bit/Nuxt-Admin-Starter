@@ -136,6 +136,12 @@ const serverEnv = (i) => ({
   NUXT_SESSION_PASSWORD: process.env.NUXT_SESSION_PASSWORD || "e2e-session-password-0123456789abcdef",
   NUXT_IP_HASH_SECRET: process.env.NUXT_IP_HASH_SECRET || "e2e-ip-hash-secret-0123456789abcdef",
   NUXT_PUBLIC_SITE_URL: originOf(i),
+  // Media storage on the in-process fake store (`memory:`), so the media e2e needs no RustFS. Placeholder keys only.
+  NUXT_S3_ENDPOINT: "memory:",
+  NUXT_S3_ACCESS_KEY: "e2e-access",
+  NUXT_S3_SECRET_KEY: "e2e-secret-key",
+  NUXT_S3_PRIVATE_BUCKET: "e2e-private",
+  NUXT_S3_PUBLIC_BUCKET: "e2e-public",
   E2E_BUILD_DIR: `.nuxt-e2e-shard-${i}`,
   // A dev server watches a lot of files; on a machine near its inotify limit polling avoids ENOSPC.
   ...(process.env.E2E_POLLING === "1" ? { CHOKIDAR_USEPOLLING: "1", CHOKIDAR_INTERVAL: "2000" } : {}),

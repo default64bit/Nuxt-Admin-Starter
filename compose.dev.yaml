@@ -25,6 +25,8 @@ services:
   migrate: *dev-node
   seed: *dev-node
   monitoring-db-init: *dev-node
+  storage-init: *dev-node
+  media-gc: *dev-node
   # The backup job is a plain PostgreSQL-based image, not the Node dev image.
   backup:
     build:

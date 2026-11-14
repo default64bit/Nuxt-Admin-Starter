@@ -3,15 +3,19 @@
 import { toast } from "vue-sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import AdminImageField, { type ImageFieldValue } from "~/components/admin/AdminImageField.vue";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useMediaStatus } from "~/composables/admin/useMediaStatus";
 import { useDemoTicketAssignees, useDemoTicketMutations } from "~/composables/demo-ticket/useDemoTickets";
 import { DEMO_TICKET_DESCRIPTION_MAX, DEMO_TICKET_PRIORITIES, DEMO_TICKET_STATUS_MESSAGE_KEYS, DEMO_TICKET_TITLE_MAX, type DemoTicketPriority, type DemoTicketStatus } from "~~/shared/constants/demo-ticket";
+import { DEMO_TICKET_IMAGE_PURPOSE } from "~~/shared/constants/media";
 import type { DemoTicketRow } from "~~/shared/schemas/demo-ticket";
+import { mediaImageUrl } from "~~/shared/utils/media-image";
 import { parseApiError, parseFieldErrors } from "~~/shared/utils/api-error-client";
 import { nextDemoTicketStatus } from "~~/shared/utils/demo-ticket-rules";
 
@@ -33,14 +37,20 @@ const emit = defineEmits<{ saved: []; deleted: []; retry: [] }>();
 const { t } = useI18n();
 const { create, update, remove } = useDemoTicketMutations();
 const assignees = useDemoTicketAssignees();
+const media = useMediaStatus();
 const NONE = "none";
 
 const isNew = computed(() => props.ticket === null && !props.loading && !props.failed);
 const editable = computed(() => props.canManage);
-const pending = computed(() => create.isPending.value || update.isPending.value || remove.isPending.value);
+const pending = computed(() => create.isPending.value || update.isPending.value || remove.isPending.value || uploading.value);
+// The image field works only while media storage is On; with it Off the field says so and the rest of the form still saves.
+const imageDisabled = computed(() => !props.canManage || !media.enabled.value);
+const imageHint = computed(() => (media.settled.value && !media.enabled.value ? t("admin.media.notConfigured") : undefined));
 
 const form = reactive({ title: "", description: "", priority: "normal" as DemoTicketPriority, assigneeId: NONE, status: "open" as DemoTicketStatus });
-const errors = ref<Partial<Record<"title" | "description" | "assigneeId", string>>>({});
+const image = ref<ImageFieldValue | null>(null);
+const uploading = ref(false);
+const errors = ref<Partial<Record<"title" | "description" | "assigneeId" | "imageAltFa" | "imageAltEn", string>>>({});
 const deleteOpen = ref(false);
 
 function reset() {
@@ -49,6 +59,10 @@ function reset() {
   form.priority = props.ticket?.priority ?? "normal";
   form.assigneeId = props.ticket?.assignee?.id ?? NONE;
   form.status = props.ticket?.status ?? "open";
+  const saved = props.ticket?.image;
+  image.value = saved
+    ? { mediaObjectId: saved.mediaObjectId, altFa: saved.altFa, altEn: saved.altEn, previewUrl: mediaImageUrl(saved.key, { width: 128, height: 128 }), width: saved.width, height: saved.height }
+    : null;
   errors.value = {};
 }
 // Each opening, and every new version of the ticket (a save, a reload after a conflict), starts from the saved values.
@@ -77,6 +91,8 @@ function validate(): boolean {
   if (!title) next.title = messageOf("required");
   else if (title.length > DEMO_TICKET_TITLE_MAX) next.title = messageOf("too_long");
   if (form.description.trim().length > DEMO_TICKET_DESCRIPTION_MAX) next.description = messageOf("too_long");
+  if (image.value && !image.value.altFa.trim()) next.imageAltFa = t("admin.media.errors.required");
+  if (image.value && !image.value.altEn.trim()) next.imageAltEn = t("admin.media.errors.required");
   errors.value = next;
   return Object.keys(next).length === 0;
 }
@@ -85,6 +101,7 @@ function showServerErrors(error: unknown): boolean {
   const fields = parseFieldErrors(error);
   const next: typeof errors.value = {};
   for (const field of ["title", "description", "assigneeId"] as const) if (fields[field]?.[0]) next[field] = messageOf(fields[field][0]);
+  for (const field of ["imageAltFa", "imageAltEn"] as const) if (fields[field]?.[0]) next[field] = t("admin.media.errors.required");
   errors.value = next;
   return Object.keys(next).length > 0;
 }
@@ -92,14 +109,19 @@ function showServerErrors(error: unknown): boolean {
 async function submit() {
   if (pending.value || !editable.value || !validate()) return;
   const assigneeId = form.assigneeId === NONE ? null : form.assigneeId;
+  const saved = props.ticket?.image ?? null;
+  const picked = image.value;
+  const imageBody = picked ? { imageMediaObjectId: picked.mediaObjectId, imageAltFa: picked.altFa.trim(), imageAltEn: picked.altEn.trim() } : { imageMediaObjectId: null, imageAltFa: null, imageAltEn: null };
+  // An unchanged image is left out of the save, so a ticket whose image cannot be reached (media Off) still saves.
+  const imageUnchanged = (picked?.mediaObjectId ?? null) === (saved?.mediaObjectId ?? null) && picked?.altFa.trim() === saved?.altFa && picked?.altEn.trim() === saved?.altEn;
   try {
     if (props.ticket) {
       await update.mutateAsync({
         id: props.ticket.id,
-        body: { title: form.title, description: form.description, priority: form.priority, assigneeId, status: form.status, expectedUpdatedAt: props.ticket.updatedAt },
+        body: { title: form.title, description: form.description, priority: form.priority, assigneeId, status: form.status, expectedUpdatedAt: props.ticket.updatedAt, ...(imageUnchanged || (!picked && !saved) ? {} : imageBody) },
       });
     } else {
-      await create.mutateAsync({ title: form.title, description: form.description, priority: form.priority, assigneeId });
+      await create.mutateAsync({ title: form.title, description: form.description, priority: form.priority, assigneeId, ...(picked ? imageBody : { imageAltFa: undefined, imageAltEn: undefined }) });
     }
     toast.success(t(props.ticket ? "admin.demoTickets.toast.saved" : "admin.demoTickets.toast.created"));
     emit("saved");
@@ -111,7 +133,8 @@ async function submit() {
 function handleFailure(error: unknown) {
   const parsed = parseApiError(error);
   if (parsed.status === 400 && showServerErrors(error)) return;
-  if (parsed.code === "stale_version") toast.error(t("admin.demoTickets.toast.stale"));
+  if (parsed.code === "media_invalid") toast.error(t("admin.media.errors.mediaInvalid"));
+  else if (parsed.code === "stale_version") toast.error(t("admin.demoTickets.toast.stale"));
   else if (parsed.code === "invalid_transition") toast.error(t("admin.demoTickets.toast.invalidTransition"));
   else if (parsed.code === "not_found") {
     toast.error(t("admin.demoTickets.toast.gone"));
@@ -203,6 +226,15 @@ const description = computed(() => t(isNew.value ? "admin.demoTickets.dialog.cre
             <p v-if="errors.assigneeId" class="text-destructive text-sm" role="alert">{{ errors.assigneeId }}</p>
           </div>
         </div>
+        <AdminImageField
+          v-model="image"
+          :purpose="DEMO_TICKET_IMAGE_PURPOSE"
+          id-prefix="demo-ticket-image"
+          :disabled="imageDisabled"
+          :hint="imageHint"
+          :errors="{ altFa: errors.imageAltFa, altEn: errors.imageAltEn }"
+          @busy="uploading = $event"
+        />
         <div v-if="ticket" class="grid gap-1.5">
           <Label for="demo-ticket-status">{{ t("admin.demoTickets.fields.status") }}</Label>
           <Select v-model="form.status" :disabled="!editable || statusOptions.length < 2">

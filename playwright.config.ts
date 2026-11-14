@@ -55,6 +55,12 @@ export default defineConfig({
           NUXT_APP_ENV: "local",
           E2E_BUILD_DIR: e2eBuildDir,
           NUXT_PUBLIC_SITE_URL: baseURL,
+          // Media storage on the in-process fake store, so the media e2e needs no RustFS.
+          NUXT_S3_ENDPOINT: "memory:",
+          NUXT_S3_ACCESS_KEY: "e2e-access",
+          NUXT_S3_SECRET_KEY: "e2e-secret-key",
+          NUXT_S3_PRIVATE_BUCKET: "e2e-private",
+          NUXT_S3_PUBLIC_BUCKET: "e2e-public",
         },
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,

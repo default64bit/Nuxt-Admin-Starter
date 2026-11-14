@@ -2,6 +2,7 @@
 import { demoTicketUpdateSchema } from "../../../../../shared/schemas/demo-ticket";
 import { updateDemoTicket } from "../../../../services/demo-ticket.service";
 import { uuidParam } from "../../../../utils/admin-handlers";
+import { tryObjectStorage } from "../../../../utils/object-storage";
 import { parseBody } from "../../../../utils/parse-body";
 import { requirePermission } from "../../../../utils/require-auth";
 
@@ -9,6 +10,6 @@ import { requirePermission } from "../../../../utils/require-auth";
 export default defineEventHandler(async (event) => {
   const actor = await requirePermission(event, "manage-demo-tickets");
   const id = uuidParam(event);
-  return updateDemoTicket({ db: useDb() }, actor, id, await parseBody(event, demoTicketUpdateSchema));
+  return updateDemoTicket({ db: useDb(), storage: tryObjectStorage() }, actor, id, await parseBody(event, demoTicketUpdateSchema));
 });
 // demo-ticket:end

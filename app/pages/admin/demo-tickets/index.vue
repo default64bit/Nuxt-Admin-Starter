@@ -17,6 +17,7 @@ import AdminViewSwitch from "~/components/admin/AdminViewSwitch.vue";
 import type { AdminCardFact, AdminListView } from "~/components/admin/admin-list-view";
 import DemoTicketBoard from "~/components/demo-ticket/DemoTicketBoard.vue";
 import DemoTicketDialog from "~/components/demo-ticket/DemoTicketDialog.vue";
+import DemoTicketThumbnail from "~/components/demo-ticket/DemoTicketThumbnail.vue";
 import DemoTicketStatusBadge from "~/components/demo-ticket/DemoTicketStatusBadge.vue";
 import DemoTicketWaitingChip from "~/components/demo-ticket/DemoTicketWaitingChip.vue";
 import { useAdminCan } from "~/composables/admin/useAdminCan";
@@ -171,6 +172,7 @@ const columns = computed<ColumnDef<DataTableFeatures, DemoTicketRow>[]>(() => [
       <AdminCardList :items="list.data.value?.items ?? []" :total="total" :page-size="ADMIN_PAGE_SIZE" layout="rows" :label="t('admin.nav.items.demoTickets')" :page="state.page" @update:page="(next: number) => replaceState({ ...state, page: next })">
         <template #default="{ item }">
           <AdminRowCard :title="item.title" :facts="cardFacts(item)">
+            <template #media><DemoTicketThumbnail :image="item.image" /></template>
             <template #badges>
               <DemoTicketStatusBadge :status="item.status" />
               <Badge :variant="item.priority === 'high' ? 'default' : 'outline'" :data-priority="item.priority">{{ t(`admin.demoTickets.priorities.${item.priority}`) }}</Badge>

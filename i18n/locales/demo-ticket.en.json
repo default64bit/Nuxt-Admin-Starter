@@ -40,7 +40,8 @@
         "title": "Title",
         "priority": "Priority",
         "assignee": "Assignee",
-        "descriptionChanged": "Description changed"
+        "descriptionChanged": "Description changed",
+        "imageChanged": "Image changed"
       }
     },
     "demoTickets": {

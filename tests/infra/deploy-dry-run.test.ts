@@ -185,9 +185,11 @@ describe.skipIf(!available)("just deploy dry-run", () => {
     expect(lastResult()).toBe(resultOf(GOOD_A, "success", "done"));
   }, 290_000);
 
-  it("moves the previous release marker on the next deploy and starts GlitchTip only when monitoring is listed", () => {
-    const { status } = deploy(GOOD_B, { COMPOSE_PROFILES: "monitoring" });
+  it("moves the previous release marker on the next deploy, runs storage-init when media is listed and starts GlitchTip only when monitoring is listed", () => {
+    const before = events().length;
+    const { status } = deploy(GOOD_B, { COMPOSE_PROFILES: "monitoring,media" });
     expect(status).toBe(0);
+    expect(events().slice(before)).toEqual([`db:migrate ${GOOD_B}`, `db:seed ${GOOD_B}`, `storage:init ${GOOD_B}`]);
     expect(state()).toBe(`CURRENT_SHA=${GOOD_B}\nPREVIOUS_SHA=${GOOD_A}\n`);
     expect(compose("ps", "--status", "running", "--format", "{{.Service}}").stdout).toMatch(/glitchtip/);
   }, 290_000);

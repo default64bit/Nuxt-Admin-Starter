@@ -61,11 +61,26 @@ services:
       NUXT_VAPID_PRIVATE_KEY: ${NUXT_VAPID_PRIVATE_KEY:-}
       NUXT_VAPID_SUBJECT: ${NUXT_VAPID_SUBJECT:-}
       NUXT_ADMIN_CHANNEL_PUSH_ENABLED: ${NUXT_ADMIN_CHANNEL_PUSH_ENABLED:-true}
+      # Object storage (the media Optional piece): the identity keys below are the on-switch. Empty keys mean "not
+      # configured" (readiness skips storage, upload and variant routes answer 503); with them the endpoint is the rustfs service.
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+      NUXT_PUBLIC_MEDIA_BASE_URL: ${NUXT_PUBLIC_MEDIA_BASE_URL:-}
     ports:
       - 127.0.0.1:${APP_HOST_PORT:-3000}:3000
     depends_on:
       postgres:
         condition: service_healthy
+      rustfs:
+        condition: service_started
+        required: false
+      storage-init:
+        condition: service_completed_successfully
+        required: false
     healthcheck:
       test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 15s
@@ -133,9 +148,84 @@ services:
       DEFAULT_ADMIN_PHONE: ${DEFAULT_ADMIN_PHONE:-}
       DEFAULT_ADMIN_GIVEN_NAME: ${DEFAULT_ADMIN_GIVEN_NAME:-}
       DEFAULT_ADMIN_FAMILY_NAME: ${DEFAULT_ADMIN_FAMILY_NAME:-}
+      # Only the dev seed (`just db-seed-dev`) uses these, to store its sample images.
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
     depends_on:
       postgres:
         condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  # RustFS object storage (Optional piece, profile `media`; docs/optional-pieces/media.md): S3-compatible, with a private
+  # and a public bucket. The app never waits for it (`required: false`); the root credentials live here and in
+  # storage-init only, the app uses the least-privilege identity storage-init creates. Never published beyond loopback.
+  rustfs:
+    profiles: [media]
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    restart: unless-stopped
+    command: [/data]
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?Set RUSTFS_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?Set RUSTFS_SECRET_KEY in .env}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: error
+      RUSTFS_OBS_LOG_DIRECTORY: /var/log/rustfs/
+    ports:
+      - 127.0.0.1:${RUSTFS_S3_HOST_PORT:-9000}:9000
+      - 127.0.0.1:${RUSTFS_CONSOLE_HOST_PORT:-9001}:9001
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/var/log/rustfs
+    networks: [backend]
+    logging: *logging
+
+  # Creates the two buckets, the public-read policy and the app's S3 identity (idempotent). Runs with `just up`/`dev`
+  # and from `just deploy`; `just storage-ensure` runs it alone.
+  storage-init:
+    profiles: [media]
+    restart: "no"
+    command: [corepack, pnpm, "storage:init"]
+    environment:
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?Set RUSTFS_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?Set RUSTFS_SECRET_KEY in .env}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    depends_on:
+      rustfs:
+        condition: service_started
+    networks: [backend]
+    logging: *logging
+
+  # One-shot media cleanup (`just media-gc`): removes uploads nobody attached and replaced or removed images, once older
+  # than the grace period. Safe to repeat; scheduling it is an operations choice.
+  media-gc:
+    profiles: [ops]
+    command: [corepack, pnpm, "media:gc"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+        required: false
     networks: [backend]
     logging: *logging
 
@@ -214,3 +304,5 @@ networks:
 
 volumes:
   postgres-data:
+  rustfs-data:
+  rustfs-logs:

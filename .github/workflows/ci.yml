@@ -161,6 +161,8 @@ jobs:
       # Throwaway values for this job only. The *_DOCKER and password keys satisfy Compose interpolation.
       POSTGRES_PASSWORD: ci-postgres-password
       APP_DB_PASSWORD: ci-app-password
+      RUSTFS_ACCESS_KEY: ci-rustfs-access-key
+      RUSTFS_SECRET_KEY: ci-rustfs-secret-key
       DATABASE_URL_DOCKER: postgres://app:ci-app-password@postgres:5432/app
       DATABASE_ADMIN_URL_DOCKER: postgres://postgres:ci-postgres-password@postgres:5432/postgres
       DATABASE_URL: postgres://app:ci-app-password@localhost:5432/app

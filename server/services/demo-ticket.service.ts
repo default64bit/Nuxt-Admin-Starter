@@ -2,18 +2,27 @@
 import type { Db, Tx } from "../database/types";
 import { ADMIN_PAGE_SIZE, pageOffset } from "../../shared/schemas/admin-list";
 import { DEMO_TICKET_UNASSIGNED, type DemoTicketAssigneeList, type DemoTicketCreateBody, type DemoTicketList, type DemoTicketListQuery, type DemoTicketPerson, type DemoTicketRow, type DemoTicketUpdateBody } from "../../shared/schemas/demo-ticket";
+import { DEMO_TICKET_IMAGE_PURPOSE } from "../../shared/constants/media";
 import { isForwardStep } from "../../shared/utils/demo-ticket-rules";
 import { normalizeSearchText } from "../../shared/utils/search-normalize";
 import * as repository from "../repositories/demo-ticket.repository";
+import { findMediaMany } from "../repositories/media.repository";
 import { containsPattern } from "../repositories/name-search";
 import { DomainError, invalidTransition, staleVersion, validationFailed } from "../utils/domain-errors";
+import type { ObjectStorage } from "../utils/object-storage";
+import { discardStagingCopy, type Promotion } from "./admin-media.service";
+import { applyOwnerImage } from "./owner-image";
 import { recordAudit, type AuditContext } from "./admin-audit.service";
 import { recordNotificationEvent, resolveAttentionForSource } from "./notification-events.service";
 import type { AdminActor } from "./authorization";
 
 export interface DemoTicketDeps {
   db: Db;
+  /** The object store, or undefined while media storage is Off: a ticket then simply cannot gain an image. */
+  storage?: ObjectStorage;
 }
+
+const IMAGE_OWNER = "demo-ticket";
 
 export type DemoTicketActor = Pick<AdminActor, "userId" | "requestId">;
 
@@ -31,6 +40,13 @@ const notFound = () => new DomainError(404, "Not Found", "not_found");
 async function rowsOf(db: Db | Tx, records: repository.TicketRecord[]): Promise<DemoTicketRow[]> {
   const ids = [...new Set(records.flatMap((record) => [record.assigneeId, record.createdBy]).filter((id): id is string => id !== null))];
   const people = new Map<string, DemoTicketPerson>((await repository.peopleByIds(db, ids)).map((person) => [person.id, person]));
+  const imageIds = records.map((record) => record.imageMediaObjectId).filter((id): id is string => id !== null);
+  const media = new Map((await findMediaMany(db, imageIds)).map((row) => [row.id, row]));
+  const imageOf = (record: repository.TicketRecord): DemoTicketRow["image"] => {
+    const row = record.imageMediaObjectId ? media.get(record.imageMediaObjectId) : undefined;
+    // A saved image is always public; a missing or still-private object reads as no image.
+    return row && row.bucket === "public" ? { mediaObjectId: row.id, key: row.objectKey, width: row.width, height: row.height, altFa: record.imageAltFa ?? "", altEn: record.imageAltEn ?? "" } : null;
+  };
   return records.map((record) => ({
     id: record.id,
     title: record.title,
@@ -42,6 +58,7 @@ async function rowsOf(db: Db | Tx, records: repository.TicketRecord[]): Promise<
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     statusSince: record.statusSince.toISOString(),
+    image: imageOf(record),
   }));
 }
 
@@ -83,9 +100,21 @@ async function assertAssignable(tx: Tx, assigneeId: string) {
 /** Creates a ticket: it starts `open`, `statusSince` now, created by the actor. */
 export async function createDemoTicket(deps: DemoTicketDeps, actor: DemoTicketActor, body: DemoTicketCreateBody): Promise<DemoTicketRow> {
   // One transaction per write: the audit event is recorded inside it.
+  let promotion: Promotion | undefined;
   const id = await deps.db.transaction(async (tx) => {
     if (body.assigneeId) await assertAssignable(tx, body.assigneeId);
-    const created = await repository.insertTicket(tx, { title: body.title, description: body.description ?? null, priority: body.priority, assigneeId: body.assigneeId ?? null, createdBy: actor.userId });
+    const attached = await applyOwnerImage(tx, deps.storage, actor.userId, { purpose: DEMO_TICKET_IMAGE_PURPOSE }, body);
+    promotion = attached.promotion;
+    const created = await repository.insertTicket(tx, {
+      title: body.title,
+      description: body.description ?? null,
+      priority: body.priority,
+      assigneeId: body.assigneeId ?? null,
+      createdBy: actor.userId,
+      imageMediaObjectId: attached.image?.mediaObjectId ?? null,
+      imageAltFa: attached.image?.altFa ?? null,
+      imageAltEn: attached.image?.altEn ?? null,
+    });
     await recordAudit(tx, auditOf(actor), {
       action: "demo_ticket.created",
       entityType: "demo_ticket",
@@ -97,6 +126,7 @@ export async function createDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
     }
     return created;
   });
+  if (promotion && deps.storage) await discardStagingCopy(deps.storage, promotion);
   return detailOf(deps.db, id);
 }
 
@@ -106,6 +136,7 @@ export async function createDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
  * nothing writes nothing and moves no version. Field changes and a status change are audited as two events.
  */
 export async function updateDemoTicket(deps: DemoTicketDeps, actor: DemoTicketActor, id: string, body: DemoTicketUpdateBody): Promise<DemoTicketRow> {
+  let promotion: Promotion | undefined;
   await deps.db.transaction(async (tx) => {
     const current = await repository.lockTicket(tx, id);
     if (!current) throw notFound();
@@ -133,6 +164,21 @@ export async function updateDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
     const descriptionChanged = body.description !== undefined && body.description !== current.description;
     if (descriptionChanged) fields.description = body.description ?? null;
 
+    // The image: omitted leaves it, null removes it (the object stays for media GC), an id attaches a staged upload or re-saves the alt text.
+    const attached = await applyOwnerImage(tx, deps.storage, actor.userId, { purpose: DEMO_TICKET_IMAGE_PURPOSE, owner: { kind: IMAGE_OWNER, id } }, body);
+    promotion = attached.promotion;
+    const nextImage = attached.image;
+    const imageChanged =
+      nextImage !== undefined &&
+      (nextImage === null
+        ? current.imageMediaObjectId !== null
+        : nextImage.mediaObjectId !== current.imageMediaObjectId || nextImage.altFa !== current.imageAltFa || nextImage.altEn !== current.imageAltEn);
+    if (imageChanged) {
+      fields.imageMediaObjectId = nextImage?.mediaObjectId ?? null;
+      fields.imageAltFa = nextImage?.altFa ?? null;
+      fields.imageAltEn = nextImage?.altEn ?? null;
+    }
+
     const statusChanged = body.status !== undefined && body.status !== current.status;
     if (statusChanged && !isForwardStep(current.status, body.status!)) throw invalidTransition({ status: current.status });
     if (statusChanged) fields.status = body.status!;
@@ -155,12 +201,12 @@ export async function updateDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
         recipientUserId: nextAssignee,
       });
     }
-    if (Object.keys(old).length > 0 || descriptionChanged) {
+    if (Object.keys(old).length > 0 || descriptionChanged || imageChanged) {
       await recordAudit(tx, auditOf(actor), {
         action: "demo_ticket.updated",
         entityType: "demo_ticket",
         entityId: id,
-        changeSummary: { old, new: next, ...(descriptionChanged ? { descriptionChanged: true } : {}) },
+        changeSummary: { old, new: next, ...(descriptionChanged ? { descriptionChanged: true } : {}), ...(imageChanged ? { imageChanged: true } : {}) },
       });
     }
     if (statusChanged) {
@@ -172,6 +218,7 @@ export async function updateDemoTicket(deps: DemoTicketDeps, actor: DemoTicketAc
       });
     }
   });
+  if (promotion && deps.storage) await discardStagingCopy(deps.storage, promotion);
   return detailOf(deps.db, id);
 }
 

@@ -1,5 +1,6 @@
 CREATE TYPE "public"."audit_outcome" AS ENUM('success', 'denied', 'failed');--> statement-breakpoint
 CREATE TYPE "public"."locale" AS ENUM('fa', 'en');--> statement-breakpoint
+CREATE TYPE "public"."media_bucket" AS ENUM('private', 'public');--> statement-breakpoint
 CREATE TYPE "public"."notification_channel" AS ENUM('telegram', 'push');--> statement-breakpoint
 CREATE TYPE "public"."otp_purpose" AS ENUM('login', 'phone_change');--> statement-breakpoint
 CREATE TYPE "public"."outbox_status" AS ENUM('queued', 'claimed', 'delivered', 'failed', 'skipped');--> statement-breakpoint
@@ -204,6 +205,22 @@ CREATE TABLE "push_subscriptions" (
 	"last_failure_at" timestamp with time zone
 );
 --> statement-breakpoint
+CREATE TABLE "media_objects" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"bucket" "media_bucket" NOT NULL,
+	"object_key" text NOT NULL,
+	"mime_type" text NOT NULL,
+	"byte_size" integer NOT NULL,
+	"width" integer NOT NULL,
+	"height" integer NOT NULL,
+	"purpose" text,
+	"uploaded_by_user_id" uuid,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "media_objects_mime_allowed" CHECK ("media_objects"."mime_type" IN ('image/jpeg', 'image/png', 'image/webp')),
+	CONSTRAINT "media_objects_size_limit" CHECK ("media_objects"."byte_size" > 0 AND "media_objects"."byte_size" <= 10485760),
+	CONSTRAINT "media_objects_dimensions_positive" CHECK ("media_objects"."width" > 0 AND "media_objects"."height" > 0)
+);
+--> statement-breakpoint
 ALTER TABLE "admin_audit_events" ADD CONSTRAINT "admin_audit_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp_challenges" ADD CONSTRAINT "otp_challenges_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -223,6 +240,7 @@ ALTER TABLE "notification_settings" ADD CONSTRAINT "notification_settings_user_i
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_required_permission_permissions_key_fk" FOREIGN KEY ("required_permission") REFERENCES "public"."permissions"("key") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_user_id_users_id_fk" FOREIGN KEY ("recipient_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media_objects" ADD CONSTRAINT "media_objects_uploaded_by_user_id_users_id_fk" FOREIGN KEY ("uploaded_by_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "admin_audit_events_time_idx" ON "admin_audit_events" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_entity_idx" ON "admin_audit_events" USING btree ("entity_type","entity_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_actor_idx" ON "admin_audit_events" USING btree ("actor_user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -248,6 +266,8 @@ CREATE INDEX "notifications_unresolved_idx" ON "notifications" USING btree ("req
 CREATE INDEX "notifications_source_idx" ON "notifications" USING btree ("source_entity_type","source_entity_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "push_subscriptions_endpoint_unique" ON "push_subscriptions" USING btree ("endpoint");--> statement-breakpoint
 CREATE INDEX "push_subscriptions_user_idx" ON "push_subscriptions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "media_objects_uploader_idx" ON "media_objects" USING btree ("uploaded_by_user_id","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "media_objects_bucket_key_unique" ON "media_objects" USING btree ("bucket","object_key");--> statement-breakpoint
 -- hand-written-sql:start
 -- Drizzle cannot generate triggers or functions. After regenerating this baseline from the schema, re-append this
 -- whole block (everything from the `hand-written-sql:start` line to the `hand-written-sql:end` line).

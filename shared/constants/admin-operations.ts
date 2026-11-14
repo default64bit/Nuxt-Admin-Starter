@@ -35,6 +35,9 @@ export const ADMIN_OPERATIONS: Record<string, AdminOperation> = {
 // The signed-in User's own display preferences (Dashboard layout, ranges, Chart style). They need no Permission, so they
 // are never refused, and they are not audited. Mutating admin routes listed here need no ADMIN_OPERATIONS row.
 export const ADMIN_PREFERENCE_ROUTES: readonly string[] = [
+  // Staging an image changes no record and is not audited (its purpose's Permission still gates it); the save of the
+  // record that attaches the image is the audited write.
+  "POST media",
   "PUT account/notification-settings",
   "POST account/push-subscriptions",
   "DELETE account/push-subscriptions",

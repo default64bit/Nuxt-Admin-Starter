@@ -14,8 +14,12 @@ services:
   migrate: *tools-image
   seed: *tools-image
   monitoring-db-init: *tools-image
+  storage-init: *tools-image
+  media-gc: *tools-image
   backup:
     image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/backup:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+  rustfs:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
   glitchtip:
     image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
 
@@ -34,6 +38,9 @@ services:
       # Hosts of other Optional pieces plug in here (see the end of the Caddyfile for the pattern).
       ERRORS_DOMAIN: ${ERRORS_DOMAIN:-}
       CADDY_ERRORS_SITE: ${ERRORS_DOMAIN:+/etc/caddy/pieces/errors.caddy}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN:-}
+      CADDY_MEDIA_SITE: ${MEDIA_DOMAIN:+/etc/caddy/pieces/media.caddy}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
     ports:
       - 80:80
       - 443:443
@@ -47,6 +54,9 @@ services:
       app:
         condition: service_healthy
       glitchtip:
+        condition: service_started
+        required: false
+      rustfs:
         condition: service_started
         required: false
     healthcheck:

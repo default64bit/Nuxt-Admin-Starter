@@ -22,6 +22,7 @@ Table `demo_tickets` (migration `0001_demo-tickets`, after the baseline; `server
 | `created_by` | FK to `users` (`restrict`), set from the session |
 | `created_at`, `updated_at` | timestamptz, UTC; `updated_at` is the ticket's version |
 | `status_since` | timestamptz; set on creation and on every status change; the waiting-long chip counts from it |
+| `image_media_object_id`, `image_alt_fa`, `image_alt_en` | optional image (FK to `media_objects`, `restrict`) with Persian and English alt text; the alt texts are required once an image is set (CHECK) |
 
 Indexes: `(created_at desc, id desc)` for the list, `(status, created_at desc)`, `assignee_id`. Users are never deleted, so the foreign keys never block anything. A ticket is hard-deleted.
 
@@ -93,6 +94,10 @@ A ticket shows the "waiting long" chip when it has been `open` for more than 24 
 
 `view-demo-tickets` and `manage-demo-tickets` are in their own group; `manage-demo-tickets` needs `view-demo-tickets` (`422 permission_prerequisites`). Every route checks its key on the server first: `401` without a session, `403` without the key. Four audit events are written in the write transaction, group "Demo tickets": `demo_ticket.created` (title, priority, assignee), `demo_ticket.updated` (`{ old, new }` for the changed title, priority and assignee, and `descriptionChanged`), `demo_ticket.status_changed` (`{ old: { status }, new: { status } }`) and `demo_ticket.deleted` (title, status). A save that changes both fields and the status writes two events; a save that changes nothing writes none. A refused attempt is recorded under the matching operation row in `shared/constants/admin-operations.ts`.
 
+## Image
+
+Media purpose `demo-ticket-image`, gated by `manage-demo-tickets` (`.specs/media/spec.md`). `POST` and `PATCH` take `imageMediaObjectId`, `imageAltFa`, `imageAltEn` (omit to leave, `null` to remove); a row carries `image: { mediaObjectId, key, width, height, altFa, altEn } | null`. The image shows in the edit dialog and as the Cards thumbnail (`/_media` variant), and nowhere else. Replacing or removing leaves the old object for media cleanup; a change writes `imageChanged` into the `demo_ticket.updated` event. With media Off the dialog's image field is disabled with a "storage not configured" hint, thumbnails show a placeholder and create and edit still work. The dev seed gives about a quarter of the tickets a generated image when storage is configured.
+
 ## Placement
 
 Every demo path contains `demo-ticket`: `shared/{constants,schemas,utils}/demo-ticket*`, `server/{database/schema,repositories,services}/demo-ticket*`, `server/api/v1/admin/demo-tickets/`, `app/{components,composables}/demo-ticket/`, `app/pages/admin/demo-tickets/`, `i18n/locales/demo-ticket.{en,fa}.json` (feature message files, merged with `en.json` / `fa.json` when the app loads), the migration `0001_demo-tickets`, the dev seed, and the tests. Shared touch-points carry `demo-ticket:start` / `demo-ticket:end` markers: `PERMISSION_KEYS`, `PERMISSION_GROUP_IDS` / `PERMISSION_GROUPS` / `PERMISSION_PREREQUISITES`, `ADMIN_NAV_GROUPS` / `ADMIN_NAV` / `ADMIN_NAV_HUES` (the section hue is 45), `admin-nav-icons.ts`, `AUDIT_GROUPS` / `AUDIT_ACTIONS`, `ADMIN_OPERATIONS`, the schema index, the `db-seed-dev` recipe, and the demo cases of the core nav and catalogue unit tests.
@@ -105,5 +110,6 @@ Every demo path contains `demo-ticket`: `shared/{constants,schemas,utils}/demo-t
 
 - `tests/unit/shared/demo-ticket-rules.test.ts`: forward-only transitions, the tones and the waiting-long limits.
 - `tests/integration/demo-ticket/demo-tickets.test.ts`: list, create, update, delete, audit events, Zod rejection, `401` and `403` per route and key, stale version, the forward-only rule.
+- `tests/integration/demo-ticket/demo-ticket-image*.test.ts`, `demo-ticket-media-gc.test.ts`, `tests/e2e/demo-ticket-image.spec.ts`: the image (see `.specs/media/spec.md`).
 - `tests/e2e/demo-tickets-table.spec.ts`: search, filters and paging, create, edit one step and delete behind a confirmation, `?ticket=<id>`, the view-only dialog, axe and the layout direction in `fa` and `en`.
 <!-- demo-ticket:end -->

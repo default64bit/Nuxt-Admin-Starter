@@ -71,3 +71,7 @@ key from this list when it is approved.
 
 - every key in `i18n/locales/web-push-pwa.fa.json`
 - the `fa` test push copy in `shared/constants/admin-push.ts`
+
+## Media
+
+- every key under `admin.media` in `fa.json` (ported with the media pipeline)

@@ -21,7 +21,8 @@ export const runtimeConfigSchema = z.object({
   session: z.object({ password: secret }),
   // Keys the HMAC of caller IPs stored for the OTP send limits.
   ipHashSecret: secret,
-  public: z.object({ siteUrl: url }),
+  // The media origin is optional (empty = none); when set it must be a URL.
+  public: z.object({ siteUrl: url, mediaBaseUrl: z.string().trim().refine((value) => value === "" || URL.canParse(value), "must be a valid URL").optional() }),
 });
 
 export type RuntimeConfigIssue = { path: string; message: string };
@@ -63,6 +64,9 @@ export function validateRuntimeConfig(config: unknown): RuntimeConfigIssue[] {
 
   const appEnv = (config as { appEnv?: unknown } | null)?.appEnv;
   if (appEnv === "production") {
+    if ((config as { s3?: { endpoint?: unknown } } | null)?.s3?.endpoint === "memory:") {
+      issues.push({ path: "s3.endpoint", message: "the in-memory test store is not allowed in production" });
+    }
     for (const leaf of stringLeaves(config)) {
       if (PLACEHOLDER_PATTERN.test(leaf.value)) {
         issues.push({

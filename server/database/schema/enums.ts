@@ -7,3 +7,4 @@ export const auditOutcomeEnum = pgEnum("audit_outcome", v.AUDIT_OUTCOMES);
 export const localeEnum = pgEnum("locale", v.LOCALES);
 export const notificationChannelEnum = pgEnum("notification_channel", v.NOTIFICATION_CHANNELS);
 export const outboxStatusEnum = pgEnum("outbox_status", v.OUTBOX_STATUSES);
+export const mediaBucketEnum = pgEnum("media_bucket", v.MEDIA_BUCKETS);

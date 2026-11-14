@@ -31,6 +31,9 @@ export interface TicketRecord {
   createdAt: Date;
   updatedAt: Date;
   statusSince: Date;
+  imageMediaObjectId: string | null;
+  imageAltFa: string | null;
+  imageAltEn: string | null;
 }
 
 const columns = {
@@ -44,6 +47,9 @@ const columns = {
   createdAt: demoTickets.createdAt,
   updatedAt: demoTickets.updatedAt,
   statusSince: demoTickets.statusSince,
+  imageMediaObjectId: demoTickets.imageMediaObjectId,
+  imageAltFa: demoTickets.imageAltFa,
+  imageAltEn: demoTickets.imageAltEn,
 };
 
 function where(filters: TicketFilters): SQL | undefined {
@@ -102,7 +108,7 @@ export async function findActiveUserId(db: Executor, id: string): Promise<string
 
 export async function insertTicket(
   tx: Executor,
-  values: { title: string; description: string | null; priority: DemoTicketPriority; assigneeId: string | null; createdBy: string },
+  values: { title: string; description: string | null; priority: DemoTicketPriority; assigneeId: string | null; createdBy: string; imageMediaObjectId?: string | null; imageAltFa?: string | null; imageAltEn?: string | null },
 ): Promise<string> {
   const [row] = await tx.insert(demoTickets).values(values).returning({ id: demoTickets.id });
   return row!.id;
@@ -134,7 +140,7 @@ export async function countTicketsCreatedByDay(db: Executor, window: { from: Dat
 export async function updateTicket(
   tx: Executor,
   id: string,
-  values: Partial<{ title: string; description: string | null; priority: DemoTicketPriority; assigneeId: string | null; status: DemoTicketStatus }>,
+  values: Partial<{ title: string; description: string | null; priority: DemoTicketPriority; assigneeId: string | null; status: DemoTicketStatus; imageMediaObjectId: string | null; imageAltFa: string | null; imageAltEn: string | null }>,
 ): Promise<Date> {
   const now = new Date();
   await tx

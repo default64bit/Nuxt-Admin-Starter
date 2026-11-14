@@ -30,3 +30,7 @@ export const NOTIFICATION_CHANNEL_HEALTH_STATUSES = ["operational", "degraded"] 
 /** What happened to an attempted admin action: it ran, it was refused, or it was authorized but could not complete. */
 export const AUDIT_OUTCOMES = ["success", "denied", "failed"] as const;
 export type AuditOutcome = (typeof AUDIT_OUTCOMES)[number];
+
+// Media
+export const MEDIA_BUCKETS = ["private", "public"] as const;
+export type MediaBucket = (typeof MEDIA_BUCKETS)[number];

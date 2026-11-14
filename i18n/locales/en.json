@@ -659,6 +659,42 @@
       "live": {
         "summary": "{n} new notifications"
       }
+    },
+    "media": {
+      "field": {
+        "label": "Image",
+        "select": "Select file",
+        "replace": "Replace file",
+        "remove": "Remove image",
+        "cancel": "Cancel upload",
+        "retry": "Retry",
+        "uploading": "Uploading…",
+        "idle": "No file selected",
+        "hint": "JPEG, PNG or WebP, up to 10 MiB.",
+        "altFa": "Alt text (Persian)",
+        "altEn": "Alt text (English)",
+        "previewAlt": "Preview of the selected image",
+        "progress": "Upload progress",
+        "dimensions": "{width} × {height} px"
+      },
+      "errors": {
+        "unsupportedType": "Choose a JPEG, PNG or WebP image.",
+        "tooLarge": "The file is larger than 10 MiB.",
+        "notDecodable": "This file could not be read as an image.",
+        "tooManyPixels": "The image is too large (at most 8000 px per side and 40 megapixels).",
+        "rateLimited": "Too many uploads. Wait a minute and try again.",
+        "network": "The upload could not reach the server. Try again.",
+        "failed": "The upload failed. Try again.",
+        "required": "Enter the alt text.",
+        "tooLong": "This is too long.",
+        "invalid": "This value is not valid.",
+        "mediaInvalid": "The image is no longer available. Select the file again."
+      },
+      "units": {
+        "kib": "{value} KiB",
+        "mib": "{value} MiB"
+      },
+      "notConfigured": "Media storage is not configured, so images cannot be added."
     }
   },
   "error": {

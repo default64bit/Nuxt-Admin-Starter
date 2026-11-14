@@ -79,6 +79,9 @@ export default defineNuxtConfig({
     // The coarse per-IP route limiter applies to the OTP endpoints only; the per-phone and per-IP rolling send
     // limits live in the auth service. The session read and logout are never throttled.
     "/api/v1/auth/otp/**": { security: { rateLimiter: { tokensPerInterval: 20, interval: 60_000 } } },
+    // The media upload reads one raw image body with its own 10 MiB limit (server/utils/read-limited-body.ts): the
+    // module's request size limit is raised just above it, and its XSS body validator (for text) is off for binary.
+    "/api/v1/admin/media": { security: { requestSizeLimiter: { maxRequestSizeInBytes: 11 * 1024 * 1024, maxUploadFileRequestInBytes: 11 * 1024 * 1024 }, xssValidator: false } },
   },
 
   // Token CSRF is off: it cannot work on shared-cached pages. `server/middleware/10.csrf.ts` guards

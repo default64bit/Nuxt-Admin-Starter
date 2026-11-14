@@ -11,6 +11,7 @@ const KNOWN_PROFILES = new Set([...PIECE_PROFILES, "ops"]);
 const publicServices = new Set(["caddy"]);
 // The services each Optional piece adds. Each must exist and sit behind its piece's profile, so that Off removes it.
 const PIECE_SERVICES = {
+  media: ["rustfs", "storage-init"],
   monitoring: ["glitchtip", "monitoring-db-init"],
   backup: ["backup"],
 };

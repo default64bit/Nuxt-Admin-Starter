@@ -1,5 +1,6 @@
 import pg from "pg";
 import { HeadBucketCommand, S3Client } from "@aws-sdk/client-s3";
+import { isMemoryStorage } from "../../utils/object-storage";
 import { isStorageConfigured } from "../../utils/runtime-config-schema";
 import { writeLog } from "../../utils/logger";
 
@@ -41,7 +42,7 @@ export default defineEventHandler(async (event) => {
   try {
     if (!config.databaseUrl) throw new Error("database is not configured");
     await checkDatabase(config.databaseUrl);
-    if (isStorageConfigured(config.s3)) await checkStorage(config.s3);
+    if (isStorageConfigured(config.s3) && !isMemoryStorage(config.s3)) await checkStorage(config.s3);
     return { status: "ready" as const };
   } catch (error) {
     // The body stays generic: no endpoints, credentials or database details on a public health route.

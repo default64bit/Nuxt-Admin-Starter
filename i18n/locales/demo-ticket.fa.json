@@ -40,7 +40,8 @@
         "title": "عنوان",
         "priority": "اولویت",
         "assignee": "مسئول",
-        "descriptionChanged": "توضیحات تغییر کرد"
+        "descriptionChanged": "توضیحات تغییر کرد",
+        "imageChanged": "تصویر تغییر کرد"
       }
     },
     "demoTickets": {

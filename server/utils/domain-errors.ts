@@ -62,3 +62,13 @@ export const lastRole = () => new DomainError(422, "Unprocessable Entity", "last
 export const accountDisabled = () => new DomainError(409, "Conflict", "account_disabled");
 /** The Default admin is never disabled and never loses `super`. */
 export const defaultAdminProtected = () => new DomainError(409, "Conflict", "default_admin_protected");
+
+// Business errors of the media pipeline (.specs/media/spec.md).
+export const tooLarge = () => new DomainError(413, "Payload Too Large", "too_large");
+export const unsupportedType = () => new DomainError(415, "Unsupported Media Type", "unsupported_type");
+export const notDecodable = () => new DomainError(422, "Unprocessable Entity", "not_decodable");
+export const tooManyPixels = () => new DomainError(422, "Unprocessable Entity", "too_many_pixels");
+/** An image id that is unknown, someone else's upload, for another purpose, or already attached elsewhere. */
+export const mediaInvalid = () => new DomainError(422, "Unprocessable Entity", "media_invalid");
+/** Media storage is Off: the upload and variant routes cannot work. */
+export const mediaNotConfigured = () => new DomainError(503, "Service Unavailable", "media_not_configured");

@@ -25,6 +25,10 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx server/database/seed.ts",
     "worker:notifications": "tsx server/workers/notification-worker.ts",
+    "storage:ensure-buckets": "node scripts/storage/ensure-buckets.mjs",
+    "storage:ensure-identity": "node scripts/storage/ensure-app-identity.mjs",
+    "storage:init": "node scripts/storage/ensure-buckets.mjs && node scripts/storage/ensure-app-identity.mjs",
+    "media:gc": "tsx server/jobs/media-gc.ts",
     "monitoring:db:ensure": "node scripts/db/ensure-monitoring-database.mjs",
     "perf:chart-chunk": "tsx scripts/perf/check-chart-chunk.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test"
@@ -61,6 +65,7 @@
     "pinia": "^4.0.3",
     "reka-ui": "^2.11.0",
     "shadcn-nuxt": "^2.8.2",
+    "sharp": "^0.35.5",
     "vue": "^3.5.43",
     "vue-chartjs": "5.3.4",
     "vue-input-otp": "^0.4.0",

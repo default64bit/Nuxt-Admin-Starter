@@ -5,8 +5,12 @@
 //   - it refuses to run unless NUXT_APP_ENV is `local`, and no production or test database path calls it,
 //   - it is safe to rerun: the Users are upserted by phone and the tickets are added only to an empty table, so it
 //     never overwrites what was changed in the panel.
+import { randomUUID } from "node:crypto";
 import { count, eq } from "drizzle-orm";
+import sharp from "sharp";
 import { DEMO_TICKET_PRIORITIES, DEMO_TICKET_STATUSES, type DemoTicketPriority, type DemoTicketStatus } from "../../shared/constants/demo-ticket";
+import { DEMO_TICKET_IMAGE_PURPOSE } from "../../shared/constants/media";
+import type { ObjectStorage } from "../utils/object-storage";
 import * as schema from "./schema";
 import type { Tx } from "./types";
 
@@ -53,8 +57,17 @@ export function buildDevTickets(now: Date, total = 40): DevTicket[] {
   });
 }
 
-/** Upserts the dev Users with the `super` Role and adds the dev tickets when there are none. Returns how many tickets were added. */
-export async function seedDemoTicketDevData(tx: Tx, now = new Date()): Promise<number> {
+/** About a quarter of the dev tickets carry an image (when media storage is configured). */
+export const hasDevImage = (index: number) => index % 4 === 1;
+
+const IMAGE_COLOURS = ["#6d8fb3", "#b38f6d", "#6db38f", "#b36d8f", "#8f6db3"];
+
+/**
+ * Upserts the dev Users with the `super` Role and adds the dev tickets when there are none. Returns how many tickets were
+ * added. With a `storage`, the tickets for which `hasDevImage` is true get a generated placeholder image in the public
+ * bucket; without one (media Off) no ticket has an image.
+ */
+export async function seedDemoTicketDevData(tx: Tx, now = new Date(), storage?: ObjectStorage): Promise<number> {
   const [superRole] = await tx.select({ id: schema.roles.id }).from(schema.roles).where(eq(schema.roles.isSuper, true));
   if (!superRole) throw new Error("the super role is missing; run the production seed first (just db-seed)");
   const userIds: string[] = [];
@@ -70,8 +83,25 @@ export async function seedDemoTicketDevData(tx: Tx, now = new Date()): Promise<n
   const [existing] = await tx.select({ total: count() }).from(schema.demoTickets);
   if ((existing?.total ?? 0) > 0) return 0;
   const tickets = buildDevTickets(now);
+  const images = new Map<number, string>();
+  if (storage) {
+    for (const [index] of tickets.entries()) {
+      if (!hasDevImage(index)) continue;
+      const png = await sharp({ create: { width: 480, height: 320, channels: 3, background: IMAGE_COLOURS[index % IMAGE_COLOURS.length]! } }).png().toBuffer();
+      const objectKey = `images/${randomUUID()}.png`;
+      await storage.put("public", objectKey, png, "image/png");
+      const [media] = await tx
+        .insert(schema.mediaObjects)
+        .values({ bucket: "public", objectKey, mimeType: "image/png", byteSize: png.byteLength, width: 480, height: 320, purpose: DEMO_TICKET_IMAGE_PURPOSE, uploadedByUserId: userIds[index % userIds.length]! })
+        .returning({ id: schema.mediaObjects.id });
+      images.set(index, media!.id);
+    }
+  }
   await tx.insert(schema.demoTickets).values(
     tickets.map((ticket, index) => ({
+      imageMediaObjectId: images.get(index) ?? null,
+      imageAltFa: images.has(index) ? "تصویر نمونه" : null,
+      imageAltEn: images.has(index) ? "Sample image" : null,
       title: ticket.title,
       description: ticket.description,
       status: ticket.status,

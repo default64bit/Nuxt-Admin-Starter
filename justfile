@@ -26,6 +26,17 @@ services-up:
 services-down:
     docker compose stop
 
+# Media (the `media` profile; docs/optional-pieces/media.md). `just dev`/`just up` start RustFS and its one-shot storage-init when
+# COMPOSE_PROFILES lists `media`; these two run on their own.
+# Create the buckets, the public-read policy and the app's S3 identity (idempotent; needs RUSTFS_* and NUXT_S3_* in .env).
+storage-ensure:
+    docker compose run --rm storage-init
+
+# One-shot media cleanup: removes uploads nobody attached (older than 24 h) and replaced or removed images; never an object a
+# record still references. Pass flags through, e.g. `just media-gc --dry-run` or `just media-gc --older-than-hours=48`.
+media-gc *args:
+    docker compose run --rm media-gc corepack pnpm media:gc {{args}}
+
 # Production-like local run: prepared database, then every service of the active profiles from the active stack.
 up: db-prepare
     docker compose up -d

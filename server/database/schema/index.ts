@@ -6,6 +6,7 @@ export * from "./seeds";
 export * from "./dashboard";
 export * from "./notifications";
 export * from "./push-subscriptions";
+export * from "./media";
 // demo-ticket:start
 export * from "./demo-ticket";
 // demo-ticket:end

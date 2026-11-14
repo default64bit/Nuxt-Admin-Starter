@@ -3,6 +3,7 @@ import { z } from "zod";
 import { DEMO_TICKET_DESCRIPTION_MAX, DEMO_TICKET_PRIORITIES, DEMO_TICKET_STATUSES, DEMO_TICKET_TITLE_MAX, type DemoTicketPriority, type DemoTicketStatus } from "../constants/demo-ticket";
 import { adminListQuerySchema } from "./admin-list";
 import { requiredOrInvalid } from "./issue-messages";
+import { ownerImageShape, withOwnerImageRule, type OwnerImage } from "./owner-image";
 
 /** The assignee filter value for tickets nobody holds. */
 export const DEMO_TICKET_UNASSIGNED = "none";
@@ -34,6 +35,8 @@ export interface DemoTicketRow {
   updatedAt: string;
   /** When the ticket entered its current status; the waiting-long chip counts from here. */
   statusSince: string;
+  /** The optional image; null for a ticket without one. */
+  image: OwnerImage | null;
 }
 
 export interface DemoTicketList {
@@ -69,14 +72,17 @@ const assigneeId = z.uuid("invalid").nullable().optional();
 const version = z.string(requiredOrInvalid).datetime({ offset: true, message: "invalid" });
 
 /** `POST`: a new ticket starts `open` and unassigned unless an assignee is given. */
-export const demoTicketCreateSchema = z
-  .object({
-    title,
-    description,
-    priority: z.enum(DEMO_TICKET_PRIORITIES, requiredOrInvalid).default("normal"),
-    assigneeId,
-  })
-  .strict();
+export const demoTicketCreateSchema = withOwnerImageRule(
+  z
+    .object({
+      title,
+      description,
+      priority: z.enum(DEMO_TICKET_PRIORITIES, requiredOrInvalid).default("normal"),
+      assigneeId,
+      ...ownerImageShape,
+    })
+    .strict(),
+);
 export type DemoTicketCreateBody = z.output<typeof demoTicketCreateSchema>;
 
 /**
@@ -84,15 +90,18 @@ export type DemoTicketCreateBody = z.output<typeof demoTicketCreateSchema>;
  * otherwise). `status`, when it differs from the current one, must be exactly the next one (`409
  * invalid_transition` otherwise). A save that changes nothing writes nothing.
  */
-export const demoTicketUpdateSchema = z
-  .object({
-    title: title.optional(),
-    description,
-    priority: z.enum(DEMO_TICKET_PRIORITIES, requiredOrInvalid).optional(),
-    assigneeId,
-    status: z.enum(DEMO_TICKET_STATUSES, requiredOrInvalid).optional(),
-    expectedUpdatedAt: version,
-  })
-  .strict();
+export const demoTicketUpdateSchema = withOwnerImageRule(
+  z
+    .object({
+      title: title.optional(),
+      description,
+      priority: z.enum(DEMO_TICKET_PRIORITIES, requiredOrInvalid).optional(),
+      assigneeId,
+      status: z.enum(DEMO_TICKET_STATUSES, requiredOrInvalid).optional(),
+      expectedUpdatedAt: version,
+      ...ownerImageShape,
+    })
+    .strict(),
+);
 export type DemoTicketUpdateBody = z.output<typeof demoTicketUpdateSchema>;
 // demo-ticket:end
