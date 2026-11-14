@@ -1,0 +1,775 @@
+{
+  "app": {
+    "name": "Nuxt Admin Starter"
+  },
+  "language": {
+    "switch": {
+      "label": "Language",
+      "triggerLabel": "Language: {name}",
+      "menuLabel": "Choose language"
+    },
+    "options": {
+      "fa": {
+        "name": "فارسی",
+        "short": "Fa"
+      },
+      "en": {
+        "name": "English",
+        "short": "En"
+      }
+    }
+  },
+  "theme": {
+    "switch": {
+      "label": "Dark mode"
+    }
+  },
+  "admin": {
+    "table": {
+      "previous": "Previous",
+      "next": "Next",
+      "showing": "Showing {from}–{to} of {total}",
+      "pagination": "Pagination"
+    },
+    "listView": {
+      "label": "View",
+      "table": "Table",
+      "cards": "Cards",
+      "board": "Board"
+    },
+    "boardView": {
+      "previous": "Previous columns",
+      "next": "Next columns",
+      "dropHere": "Drop here",
+      "empty": "Nothing here",
+      "loadError": "This column could not be loaded.",
+      "showMore": "Show {count} more"
+    },
+    "permissions": {
+      "groups": {
+        "users": {
+          "label": "Users",
+          "hint": "Accounts and who may sign in."
+        },
+        "roles": {
+          "label": "Roles",
+          "hint": "Roles and the Permissions they grant."
+        },
+        "audit": {
+          "label": "Audit log",
+          "hint": "The record of who changed what and when."
+        }
+      },
+      "keys": {
+        "viewUsers": {
+          "label": "View users",
+          "hint": "Open the Users list and each User's page."
+        },
+        "createUsers": {
+          "label": "Create users",
+          "hint": "Add a User by phone number and give them Roles."
+        },
+        "editUsers": {
+          "label": "Edit users",
+          "hint": "Change a User's names."
+        },
+        "disableUsers": {
+          "label": "Disable and re-enable users",
+          "hint": "Block or restore sign-in; ends their sessions."
+        },
+        "viewRoles": {
+          "label": "View roles",
+          "hint": "Open the Roles list and each Role's page."
+        },
+        "manageRoles": {
+          "label": "Manage roles",
+          "hint": "Create, edit and delete Roles; give Roles to Users."
+        },
+        "viewAuditLog": {
+          "label": "View audit log",
+          "hint": "See who changed what and when."
+        }
+      }
+    },
+    "roles": {
+      "superName": "Super role",
+      "superBadge": "Super role",
+      "newButton": "New role",
+      "newTitle": "New role",
+      "loadingName": "Role",
+      "searchLabel": "Search roles",
+      "searchPlaceholder": "Search by name",
+      "clearFilters": "Clear filters",
+      "columns": {
+        "name": "Name",
+        "permissions": "Permissions",
+        "members": "Members",
+        "updated": "Last updated"
+      },
+      "noResults": {
+        "title": "No roles match",
+        "description": "Try a different search."
+      },
+      "listError": "Roles could not be loaded.",
+      "loadError": "This role could not be loaded.",
+      "noName": "No name",
+      "save": "Save role",
+      "reset": "Reset",
+      "superNote": "The Super role always has every permission. It cannot be renamed, reduced or deleted.",
+      "viewOnly": "You can view roles but not change them.",
+      "fields": {
+        "name": "Role name"
+      },
+      "editor": {
+        "groups": "Permission groups",
+        "count": "{on}/{total}",
+        "countOf": "{on} of {total}",
+        "allowGroup": "Allow all in group",
+        "clearGroup": "Clear group",
+        "neededBy": "Can't turn off: needed by {names}"
+      },
+      "members": {
+        "title": "Members",
+        "hint": "Roles are given to people from their user page",
+        "none": "No one holds this role."
+      },
+      "deleteBlocked": "Can't delete: {count} user holds this role. Remove it from them first.|Can't delete: {count} users hold this role. Remove it from them first.",
+      "delete": {
+        "button": "Delete role",
+        "title": "Delete {name}?",
+        "description": "The role is removed. This cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
+      "ownAccess": {
+        "title": "Remove your own access?",
+        "description": "Saving takes these permissions away from you:",
+        "keep": "Keep editing",
+        "saveAnyway": "Save anyway"
+      },
+      "unsaved": {
+        "title": "Discard your changes?",
+        "description": "This role has changes that are not saved.",
+        "keep": "Keep editing",
+        "discard": "Discard changes"
+      },
+      "errors": {
+        "nameShort": "Use at least {min} characters",
+        "nameLong": "Use at most {max} characters",
+        "duplicateName": "A role with this name already exists"
+      },
+      "notFound": {
+        "title": "Role not found",
+        "description": "There is no role with this id.",
+        "back": "Back to roles"
+      },
+      "toast": {
+        "created": "Role created",
+        "saved": "Role saved",
+        "deleted": "Role deleted",
+        "stale": "This role was changed by someone else. It was reloaded.",
+        "superProtected": "The Super role can't be changed.",
+        "saveFailed": "The role could not be saved. Try again.",
+        "deleteFailed": "The role could not be deleted. Try again."
+      }
+    },
+    "users": {
+      "noName": "No name",
+      "you": "You",
+      "defaultAdmin": "Default admin",
+      "newButton": "New user",
+      "searchLabel": "Search users",
+      "searchPlaceholder": "Search by name or phone",
+      "clearFilters": "Clear filters",
+      "loadError": "Users could not be loaded.",
+      "neverSignedIn": "Never signed in",
+      "rolesMore": "+{count}",
+      "columns": {
+        "name": "Name",
+        "phone": "Phone",
+        "roles": "Roles",
+        "status": "Status",
+        "joined": "Joined",
+        "lastActive": "Last active"
+      },
+      "statuses": {
+        "active": "Active",
+        "disabled": "Disabled"
+      },
+      "filters": {
+        "status": "Status",
+        "role": "Role",
+        "allStatuses": "All statuses",
+        "allRoles": "All roles"
+      },
+      "noResults": {
+        "title": "No users match",
+        "description": "Try a different search or clear the filters."
+      },
+      "fields": {
+        "givenName": "Given name",
+        "familyName": "Family name",
+        "phone": "Phone"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "tooLong": "Use at most 50 characters.",
+        "controlCharacters": "Remove characters that can't be shown.",
+        "invalid": "Enter a valid name."
+      },
+      "actions": {
+        "editNames": "Edit names",
+        "editRoles": "Edit roles",
+        "disable": "Disable user",
+        "enable": "Enable user"
+      },
+      "detail": {
+        "loadingName": "User",
+        "loadError": "This user could not be loaded.",
+        "notFound": {
+          "title": "User not found",
+          "description": "There is no user with this id.",
+          "back": "Back to users"
+        },
+        "account": {
+          "title": "Account",
+          "sessions": "Active sessions"
+        },
+        "access": {
+          "title": "Access"
+        }
+      },
+      "dialogs": {
+        "cancel": "Cancel",
+        "create": {
+          "title": "New user",
+          "description": "They can sign in with this number once they hold a role. No code is sent now.",
+          "namesHint": "Names are optional, but give both or neither.",
+          "rolesTitle": "Roles",
+          "submit": "Create user",
+          "openAccount": "Open that account",
+          "errors": {
+            "phone": {
+              "required": "Enter a phone number.",
+              "invalid": "Enter a valid mobile number.",
+              "inUse": "A user with this number already exists."
+            }
+          }
+        },
+        "names": {
+          "title": "Edit names",
+          "description": "The phone number belongs to its owner and can't be changed here.",
+          "save": "Save names"
+        },
+        "roles": {
+          "title": "Edit roles",
+          "description": "The user holds the union of their roles' permissions. Choose at least one.",
+          "confirm": "Save roles",
+          "groupLabel": "Roles",
+          "none": "There are no roles yet.",
+          "loadError": "Roles could not be loaded.",
+          "superLocked": "The Default admin always keeps the Super role.",
+          "problems": {
+            "none": "Choose at least one role.",
+            "unknownRole": "A role no longer exists. The list was reloaded."
+          }
+        },
+        "disable": {
+          "title": "Disable {name}?",
+          "description": "They are signed out everywhere at once and can't sign in until you enable them again. Their roles are kept.",
+          "confirm": "Disable"
+        },
+        "enable": {
+          "title": "Enable {name}?",
+          "description": "They can sign in again with the roles they kept.",
+          "confirm": "Enable"
+        }
+      },
+      "toast": {
+        "created": "User created",
+        "namesSaved": "Names saved",
+        "rolesSaved": "Roles saved",
+        "disabled": "User disabled",
+        "enabled": "User enabled",
+        "stale": "This user was changed by someone else. It was reloaded.",
+        "defaultAdminProtected": "The Default admin can't be disabled or lose the Super role.",
+        "failed": "That didn't work. Try again."
+      }
+    },
+    "shell": {
+      "userFallback": "Account",
+      "userMenu": "Account menu",
+      "backToHome": "Back to home page",
+      "signOut": "Sign out",
+      "signOutFailed": "Couldn't sign out. Please try again.",
+      "toggleSidebar": "Toggle sidebar",
+      "pageError": "This page failed to load.",
+      "retry": "Retry",
+      "menu": "Admin menu"
+    },
+    "nav": {
+      "groups": {
+        "dashboard": "Dashboard",
+        "people": "People",
+        "system": "System"
+      },
+      "items": {
+        "dashboard": "Dashboard",
+        "users": "Users",
+        "roles": "Roles",
+        "auditLog": "Audit log"
+      }
+    },
+    "forbidden": {
+      "title": "You don't have access to this.",
+      "body": "Your Permissions don't include it. Ask an administrator if you need it."
+    },
+    "auditLog": {
+      "groups": {
+        "people": "People",
+        "account": "My account",
+        "auth": "Sign-in",
+        "system": "System",
+        "other": "Other"
+      },
+      "outcome": {
+        "denied": "Denied",
+        "failed": "Failed"
+      },
+      "actor": {
+        "system": "System"
+      },
+      "changes": {
+        "count": "No recorded changes | 1 change | {count} changes"
+      },
+      "reason": "“{reason}”",
+      "feedLabel": "Audit events",
+      "empty": "No audit events yet.",
+      "loadError": "The audit log could not be loaded.",
+      "retry": "Try again",
+      "actions": {
+        "userCreate": "User created",
+        "userUpdate": "User names changed",
+        "userRoles": "User roles changed",
+        "userDisable": "User disabled",
+        "userEnable": "User re-enabled",
+        "roleCreate": "Role created",
+        "roleUpdate": "Role updated",
+        "roleDelete": "Role deleted",
+        "accountUpdate": "Own names changed",
+        "accountChangePhone": "Own phone number changed",
+        "authSignIn": "Signed in",
+        "authSignOut": "Signed out",
+        "auditAttemptsSuppressed": "Further refused attempts not recorded"
+      },
+      "navLabel": "Previous and next audit events",
+      "previous": "Previous",
+      "next": "Next",
+      "details": {
+        "toggle": "Details",
+        "loading": "Loading details",
+        "error": "The details could not be loaded.",
+        "retry": "Try again",
+        "none": "No recorded changes.",
+        "showAll": "Show all {count} changes",
+        "key": "Action key",
+        "group": "Group",
+        "entity": "Entity",
+        "requestId": "Request ID",
+        "noRequestId": "No request ID",
+        "noId": "—",
+        "from": "{field}: {from} → {to}",
+        "value": "{field}: {value}",
+        "added": "Added: {value}",
+        "removed": "Removed: {value}",
+        "yes": "Yes",
+        "no": "No",
+        "empty": "—",
+        "open": {
+          "user": "Open user",
+          "role": "Open role"
+        }
+      },
+      "fields": {
+        "givenName": "Given name",
+        "familyName": "Family name",
+        "phone": "Phone",
+        "status": "Status",
+        "name": "Name",
+        "roles": "Roles",
+        "permissions": "Permissions",
+        "added": "Role",
+        "removed": "Role",
+        "method": "Method",
+        "route": "Route",
+        "reasonCode": "Reason",
+        "windowHours": "Window (hours)",
+        "cap": "Cap"
+      },
+      "filters": {
+        "searchLabel": "Search by entity ID or request ID",
+        "searchPlaceholder": "Entity ID or request ID",
+        "groupLabel": "Action group",
+        "allGroups": "All groups",
+        "actorLabel": "Actor",
+        "allActors": "All actors",
+        "from": "From",
+        "to": "To",
+        "clearFrom": "Clear From day",
+        "clearTo": "Clear To day",
+        "clearFilters": "Clear filters",
+        "noMatch": "No events match these filters."
+      }
+    },
+    "account": {
+      "title": "My account",
+      "menuLabel": "My account",
+      "loading": "Loading your account",
+      "loadFailed": "We couldn't load your account.",
+      "givenName": {
+        "label": "Given name"
+      },
+      "familyName": {
+        "label": "Family name"
+      },
+      "phone": {
+        "label": "Phone",
+        "change": "Change",
+        "changeLabel": "Change phone number"
+      },
+      "save": "Save",
+      "saved": "Your name was saved.",
+      "saveFailed": "We couldn't save your changes. Please try again.",
+      "errors": {
+        "required": "This field is required.",
+        "tooLong": "Use at most 50 characters.",
+        "controlCharacters": "Remove characters that can't be shown.",
+        "invalid": "Enter a valid name."
+      },
+      "phoneChange": {
+        "title": "Change phone number",
+        "description": "We'll send a code to the new number. Your number changes only after you enter it.",
+        "codeTitle": "Enter the code",
+        "label": "New phone number",
+        "send": "Send code",
+        "current": "This is already your number",
+        "verify": "Change number",
+        "otherDevices": "You stay signed in here. Other devices are signed out.",
+        "inUse": {
+          "title": "This number belongs to another account",
+          "body": "Use a different number."
+        },
+        "success": "Your phone number was changed."
+      },
+      "notifications": {
+        "title": "Notification settings",
+        "menuLabel": "Notification settings",
+        "inboxNote": "Every notification reaches your Inbox. Channels below also send it away from the panel.",
+        "account": {
+          "title": "Your account",
+          "help": "These choices follow you to every browser."
+        },
+        "loadError": "Your notification settings could not be loaded.",
+        "badge": {
+          "connected": "Connected",
+          "notConnected": "Not connected",
+          "unavailable": "Unavailable",
+          "degraded": "Paused"
+        },
+        "unavailable": "This channel is not available right now.",
+        "degraded": "This channel is paused since {time} after repeated failures.",
+        "notConnected": "Connect this channel to receive notifications on it.",
+        "connect": "Connect",
+        "channels": {
+          "telegram": "Telegram",
+          "push": "Browser push"
+        },
+        "send": {
+          "telegram": "Send notifications on Telegram",
+          "push": "Send browser push notifications"
+        },
+        "language": {
+          "title": "Message language",
+          "help": "The language of messages sent through channels."
+        },
+        "save": "Save",
+        "saving": "Saving",
+        "saved": "Notification settings saved.",
+        "saveFailed": "Your settings could not be saved.",
+        "device": {
+          "title": "This device",
+          "help": "Applies to this browser only and takes effect at once.",
+          "sound": {
+            "title": "Sound",
+            "help": "A short chime when a new notification arrives while the panel is open.",
+            "label": "Play a sound on this device"
+          }
+        }
+      }
+    },
+    "strip": {
+      "loadError": "The figures could not be loaded.",
+      "users": {
+        "label": "Users at a glance",
+        "newAccounts": "New accounts, last 30 days",
+        "total": "Total accounts",
+        "disabled": "Disabled accounts",
+        "sparkline": "New accounts per day over the last {days} days: {total} in all"
+      }
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "grid": "Dashboard modules",
+      "empty": "Your role has no Dashboard modules. Your pages are in the menu.",
+      "loadFailed": "Couldn't load your Dashboard",
+      "retry": "Retry",
+      "module": {
+        "updated": "Updated {time}",
+        "refresh": "Refresh",
+        "refreshing": "Refreshing",
+        "loading": "Loading",
+        "error": "Couldn't load",
+        "retry": "Retry"
+      },
+      "range": {
+        "menuLabel": "{module}: range, {range}",
+        "saveFailed": "Couldn't save the range. Please try again.",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "last7Days": "Last 7 days",
+        "last30Days": "Last 30 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "chartStyle": {
+        "button": "Chart style",
+        "soft": "Soft",
+        "glow": "Glow",
+        "pro": "Pro",
+        "saveFailed": "Couldn't save the chart style. Please try again."
+      },
+      "customize": {
+        "button": "Customize",
+        "bar": "Customize Dashboard",
+        "chooseModules": "Choose modules",
+        "reset": "Reset to default",
+        "resetTitle": "Reset to the default layout?",
+        "resetBody": "This changes your draft only. Your date ranges and Chart style are kept, and nothing is saved until you press Save.",
+        "resetConfirm": "Reset",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saveFailed": "Couldn't save your Dashboard. Please try again.",
+        "stale": "Your Dashboard was changed on another device",
+        "loadLatest": "Load latest",
+        "leaveTitle": "Leave without saving?",
+        "leaveBody": "Your Dashboard changes haven't been saved.",
+        "leaveStay": "Keep editing",
+        "leaveConfirm": "Leave",
+        "toolbar": "Edit {module}",
+        "move": "Move",
+        "moveLabel": "Move {module}",
+        "moveTo": {
+          "start": "Move to start",
+          "earlier": "Move earlier",
+          "later": "Move later",
+          "end": "Move to end"
+        },
+        "sizeLabel": "Size of {module}: {size}",
+        "widths": {
+          "third": "One third",
+          "half": "Half",
+          "full": "Full width"
+        },
+        "fill": "Fill",
+        "fillLabel": "Fill the row with {module}",
+        "remove": "Remove {module}",
+        "grip": "Drag {module} to a new place",
+        "moved": "{module} moved to position {position} of {total}",
+        "removed": "{module} removed",
+        "added": "{module} added at the end",
+        "choose": {
+          "description": "Tick the modules to show on your Dashboard. The previews use sample data, never real data.",
+          "sample": "Sample",
+          "count": "{n} of {total} modules chosen",
+          "done": "Done",
+          "fixed": "Always shown"
+        },
+        "locked": "{module} is always first and cannot be moved or removed"
+      },
+      "newAccounts": {
+        "newAccounts": "New accounts",
+        "total": "Total accounts",
+        "sparkline": "New accounts per day over the last {days} days: {total} in all",
+        "openUsers": "Open users"
+      },
+      "modules": {
+        "newAccounts": "New accounts",
+        "needsAttention": "Needs attention"
+      },
+      "figure": {
+        "new": "New",
+        "changeUp": "Up {percent}% from the previous period",
+        "changeDown": "Down {percent}% from the previous period",
+        "changeFlat": "No change from the previous period",
+        "changeNew": "New: nothing in the previous period",
+        "changeNone": "No change: nothing in either period",
+        "rate": "{n}%",
+        "points": "{n} pts",
+        "pointsUp": "Up {n} percentage points from the previous period",
+        "pointsDown": "Down {n} percentage points from the previous period"
+      },
+      "sample": {
+        "queue": "Queue {n}",
+        "stage": "Stage {n}",
+        "figure": "Figure",
+        "rate": "Rate {n}"
+      },
+      "needsAttention": {
+        "caughtUp": "All caught up"
+      }
+    },
+    "notifications": {
+      "title": "Inbox",
+      "bell": "Inbox",
+      "bellUnread": "Inbox, {count} unread",
+      "markAllRead": "Mark all as read",
+      "settingsLink": "Notification settings",
+      "tabsLabel": "Inbox view",
+      "tabs": {
+        "unread": "Unread",
+        "read": "Read",
+        "all": "All"
+      },
+      "popoverError": "The Inbox could not be loaded.",
+      "popoverEmpty": "Nothing unread.",
+      "popoverEmptyRead": "No read items yet.",
+      "viewAll": "View all",
+      "done": "Done",
+      "open": "Open",
+      "unreadDot": "Unread",
+      "actions": "Actions for: {title}",
+      "markUnread": "Mark as unread",
+      "markRead": "Mark as read",
+      "typeLabel": "Type",
+      "allTypes": "All types",
+      "loadError": "The Inbox could not be loaded.",
+      "emptyUnread": "You're all caught up.",
+      "emptyAll": "No notifications yet.",
+      "live": {
+        "summary": "{n} new notifications"
+      }
+    },
+    "media": {
+      "field": {
+        "label": "Image",
+        "select": "Select file",
+        "replace": "Replace file",
+        "remove": "Remove image",
+        "cancel": "Cancel upload",
+        "retry": "Retry",
+        "uploading": "Uploading…",
+        "idle": "No file selected",
+        "hint": "JPEG, PNG or WebP, up to 10 MiB.",
+        "altFa": "Alt text (Persian)",
+        "altEn": "Alt text (English)",
+        "previewAlt": "Preview of the selected image",
+        "progress": "Upload progress",
+        "dimensions": "{width} × {height} px"
+      },
+      "errors": {
+        "unsupportedType": "Choose a JPEG, PNG or WebP image.",
+        "tooLarge": "The file is larger than 10 MiB.",
+        "notDecodable": "This file could not be read as an image.",
+        "tooManyPixels": "The image is too large (at most 8000 px per side and 40 megapixels).",
+        "rateLimited": "Too many uploads. Wait a minute and try again.",
+        "network": "The upload could not reach the server. Try again.",
+        "failed": "The upload failed. Try again.",
+        "required": "Enter the alt text.",
+        "tooLong": "This is too long.",
+        "invalid": "This value is not valid.",
+        "mediaInvalid": "The image is no longer available. Select the file again."
+      },
+      "units": {
+        "kib": "{value} KiB",
+        "mib": "{value} MiB"
+      },
+      "notConfigured": "Media storage is not configured, so images cannot be added."
+    }
+  },
+  "error": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you are looking for does not exist or has moved."
+    },
+    "generic": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred. Please try again."
+    },
+    "backHome": "Back to home",
+    "forbidden": {
+      "title": "Access denied",
+      "description": "You don't have permission to open this page."
+    },
+    "backToAdmin": "Back to the admin panel"
+  },
+  "auth": {
+    "signedOut": "You have been signed out.",
+    "sessionEnded": {
+      "title": "Your session has ended",
+      "body": "For your security, you are signed out after 30 minutes without activity or 12 hours in total. Sign in again to continue."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "description": "Enter your phone number and we will text you a one-time code.",
+      "phone": {
+        "label": "Phone number",
+        "placeholder": "0912 345 6789",
+        "continue": "Send code",
+        "invalid": "Enter a valid mobile number, like 0912 345 6789.",
+        "rateLimited": "Too many codes requested. Try again in about {minutes} minutes."
+      },
+      "code": {
+        "title": "Enter the code",
+        "sentTo": "We sent a 5-digit code to {phone}.",
+        "label": "One-time code",
+        "continue": "Continue",
+        "wrong": "That code is wrong.",
+        "resend": "Send the code again",
+        "resendIn": "Send again in {seconds} seconds",
+        "resentSame": "We sent the same code again.",
+        "testMode": "Test mode: code filled in.",
+        "useDifferent": "Use a different number"
+      },
+      "expired": {
+        "title": "This code has expired",
+        "body": "Codes are valid for 2 minutes. Request a new one to continue.",
+        "cta": "Send a new code"
+      },
+      "attempts": {
+        "title": "Too many attempts",
+        "body": "That code can no longer be used. Request a new one to continue.",
+        "cta": "Send a new code"
+      },
+      "errors": {
+        "sms": "We could not send the code. Please try again.",
+        "network": "We could not reach the server. Check your connection and try again.",
+        "generic": "Something went wrong.",
+        "reload": "Reload the page"
+      }
+    }
+  },
+  "landing": {
+    "seo": {
+      "title": "Nuxt Admin Starter",
+      "description": "A starting point for internal admin and dashboard applications."
+    },
+    "hero": {
+      "title": "Nuxt Admin Starter",
+      "description": "A starting point for internal admin and dashboard applications. Sign in to open the admin panel."
+    },
+    "signIn": {
+      "cta": "Admin sign-in"
+    }
+  }
+}

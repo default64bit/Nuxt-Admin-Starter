@@ -1,0 +1,42 @@
+{
+	email {$ACME_EMAIL}
+
+	# Certificates come from Let's Encrypt only, by Caddy's own HTTP-01 (port 80) and TLS-ALPN-01 (port 443) challenges:
+	# no DNS provider API or key, so every hostname must resolve directly to this server and ports 80/443 must be
+	# reachable from the CA's validation servers. Setting acme_ca makes it the only issuer (no ZeroSSL fallback).
+	# CADDY_ACME_CA (compose default: Let's Encrypt production) is set to the Let's Encrypt staging directory for the
+	# first issuance only; an empty value is a parse error rather than a silent fallback to Caddy's default issuers.
+	acme_ca {$CADDY_ACME_CA}
+}
+
+# No proxy sits in front of Caddy, so no peer is trusted to forward a client address: {client_ip} is the TCP peer, and
+# every reverse_proxy below (and in every file under ops/caddy/pieces/) replaces any client-supplied X-Forwarded-For
+# with it. The app reads the leftmost X-Forwarded-For as the visitor address (rate limits, audit trail).
+
+# The www hostname has its own certificate and permanently redirects to the apex, keeping path and query.
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} 308
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-For {client_ip}
+	}
+}
+
+# Hosts of other Optional pieces (ADR-0029). A piece owns one site file under ops/caddy/pieces/ and is switched on by
+# compose.prod.yaml setting its CADDY_<PIECE>_SITE variable to that file's path, only when the piece's domain is set;
+# otherwise the empty off.caddy is imported and the host does not exist (no certificate is requested for it).
+# Pattern for a piece (the media and error-tracking pieces add theirs):
+#   1. ops/caddy/pieces/<piece>.caddy: a site block for {$<PIECE>_DOMAIN} whose reverse_proxy sets
+#      `header_up X-Forwarded-For {client_ip}` like the site above.
+#   2. compose.prod.yaml, service caddy, environment:
+#        <PIECE>_DOMAIN: ${<PIECE>_DOMAIN:-}
+#        CADDY_<PIECE>_SITE: ${<PIECE>_DOMAIN:+/etc/caddy/pieces/<piece>.caddy}
+#      and, in depends_on, the piece's service with `required: false`.
+#   3. One import line below, so a piece removed for good leaves one line and one file to delete.
+# piece:media
+import {$CADDY_MEDIA_SITE:/etc/caddy/pieces/off.caddy}
+# piece:errors (error tracking, behind the monitoring profile)
+import {$CADDY_ERRORS_SITE:/etc/caddy/pieces/off.caddy}

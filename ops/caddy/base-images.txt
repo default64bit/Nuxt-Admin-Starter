@@ -1,0 +1,4 @@
+# The stock Caddy image the production overlay runs (compose.prod.yaml, `base/caddy`), pinned by tag and digest.
+# CI mirrors it unchanged to ghcr.io/default64bit/nuxt-admin-starter/base/<name>:<tag> (release workflow). A bump edits this line and the
+# matching compose.prod.yaml image line; compose-check fails when they differ.
+caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb

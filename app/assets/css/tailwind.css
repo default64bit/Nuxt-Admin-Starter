@@ -1,0 +1,491 @@
+
+/* Self-hosted fonts: Inter for Latin, Vazirmatn for Persian; 400/500/600 only. */
+@import "@fontsource/inter/latin-400.css";
+@import "@fontsource/inter/latin-500.css";
+@import "@fontsource/inter/latin-600.css";
+@import "@fontsource/vazirmatn/arabic-400.css";
+@import "@fontsource/vazirmatn/arabic-500.css";
+@import "@fontsource/vazirmatn/arabic-600.css";
+
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * shadcn-vue `data-*` variants, copied verbatim from `shadcn-vue/dist/tailwind.css` so the
+ * installed primitives' `data-open:`/`data-closed:` animations take effect. Do not edit.
+ */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@theme inline {
+  /* Reka UI exposes the measured height as --reka-accordion-content-height. */
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--reka-accordion-content-height, auto);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--reka-accordion-content-height, auto);
+    }
+    to {
+      height: 0;
+    }
+  }
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes caret-blink {
+    0%,
+    70%,
+    100% {
+      opacity: 1;
+    }
+    20%,
+    50% {
+      opacity: 0;
+    }
+  }
+  --animate-caret-blink: caret-blink 1.25s ease-out infinite;
+
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Status tones: a tinted background and its text colour. Values below in :root and .dark. */
+  --color-status-neutral: var(--status-neutral);
+  --color-status-neutral-foreground: var(--status-neutral-foreground);
+  --color-status-info: var(--status-info);
+  --color-status-info-foreground: var(--status-info-foreground);
+  --color-status-progress: var(--status-progress);
+  --color-status-progress-foreground: var(--status-progress-foreground);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-foreground: var(--status-warning-foreground);
+  --color-status-success: var(--status-success);
+  --color-status-success-foreground: var(--status-success-foreground);
+  --color-status-danger: var(--status-danger);
+  --color-status-danger-foreground: var(--status-danger-foreground);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Status tones: tinted background + text pairs, AA (>= 4.5:1) in both modes. */
+  --status-neutral: oklch(0.95 0 0);
+  --status-neutral-foreground: oklch(0.4 0 0);
+  --status-info: oklch(0.95 0.04 255);
+  --status-info-foreground: oklch(0.4 0.13 255);
+  --status-progress: oklch(0.95 0.04 300);
+  --status-progress-foreground: oklch(0.4 0.13 300);
+  --status-warning: oklch(0.95 0.04 80);
+  --status-warning-foreground: oklch(0.4 0.13 80);
+  --status-success: oklch(0.95 0.04 150);
+  --status-success-foreground: oklch(0.4 0.13 150);
+  --status-danger: oklch(0.95 0.04 25);
+  --status-danger-foreground: oklch(0.4 0.13 25);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+
+  /* Status tones: tinted background + text pairs, AA (>= 4.5:1) in both modes. */
+  --status-neutral: oklch(0.3 0 0);
+  --status-neutral-foreground: oklch(0.88 0 0);
+  --status-info: oklch(0.3 0.06 255);
+  --status-info-foreground: oklch(0.88 0.09 255);
+  --status-progress: oklch(0.3 0.06 300);
+  --status-progress-foreground: oklch(0.88 0.09 300);
+  --status-warning: oklch(0.3 0.06 80);
+  --status-warning-foreground: oklch(0.88 0.09 80);
+  --status-success: oklch(0.3 0.06 150);
+  --status-success-foreground: oklch(0.88 0.09 150);
+  --status-danger: oklch(0.3 0.06 25);
+  --status-danger-foreground: oklch(0.88 0.09 25);
+}
+
+/*
+ * Fonts. `en` uses Inter; `fa` uses Vazirmatn with Inter for Latin text inside it. `--font-sans` is
+ * deliberately not inlined, so the `html:lang(fa)` override below reaches every `font-sans` utility.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html:lang(fa) {
+  --font-sans: "Vazirmatn", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  /*
+   * Reserve the scrollbar's space whether or not the page currently scrolls. Without it, content
+   * that grows past the viewport (switching to a longer tab, loading rows) makes a classic scrollbar
+   * appear, which narrows the layout and shifts everything sideways by the scrollbar's width.
+   */
+  html {
+    scrollbar-gutter: stable;
+  }
+  /* Set by `ScrollLock` for non-modal overlays; the gutter above keeps the layout from shifting. */
+  html.scroll-locked {
+    overflow: hidden;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /*
+   * Thin, subtle scrollbars in both color modes. The thumb is the current
+   * `--foreground` at low strength on a transparent track, so it follows the shadcn tokens and light/dark
+   * without a second set of colors. `scrollbar-width`/`scrollbar-color` are the standard properties; the `::-webkit-`
+   * rules only serve older Safari (browsers that support the standard ones ignore them).
+   */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 24%, transparent) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--foreground) 24%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--foreground) 42%, transparent);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/*
+ * vue-input-otp hides its real <input> behind the slot boxes and injects these rules as a runtime
+ * <style> tag. The production CSP (ADR-0022, no nonce, no 'unsafe-inline') blocks that tag, so typed
+ * digits and their selection would show through beside the first box. Shipping the same rules in this
+ * same-origin stylesheet keeps them under 'self'.
+ */
+[data-input-otp]::selection {
+  background: transparent !important;
+  color: transparent !important;
+}
+[data-input-otp]:autofill,
+[data-input-otp]:-webkit-autofill {
+  background: transparent !important;
+  color: transparent !important;
+  border-color: transparent !important;
+  opacity: 0 !important;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -webkit-text-fill-color: transparent !important;
+}
+@supports (-webkit-touch-callout: none) {
+  [data-input-otp] {
+    letter-spacing: -0.6em !important;
+    font-weight: 100 !important;
+    font-stretch: ultra-condensed;
+    font-optical-sizing: none !important;
+    left: -1px !important;
+    right: 1px !important;
+  }
+}
+[data-input-otp] + * {
+  pointer-events: all !important;
+}
+
+/*
+ * Dashboard module colours (.specs/admin-dashboard/spec.md "Colour and motion"): one named hue per module, read by the
+ * module card for its tinted icon tile and faint glow. A module adds its line here (the completeness test checks it).
+ * No inline styles.
+ */
+:root {
+  --dashboard-hue-needs-attention: 24;
+  --dashboard-hue-new-accounts: 100;
+  /* demo-ticket:start */
+  --dashboard-hue-demo-tickets-by-status: 215;
+  --dashboard-hue-demo-tickets-per-day: 190;
+  /* demo-ticket:end */
+}
+[data-dashboard-module="needs-attention"] {
+  --dashboard-hue: var(--dashboard-hue-needs-attention);
+}
+/* demo-ticket:start */
+[data-dashboard-module="demo-tickets-by-status"] {
+  --dashboard-hue: var(--dashboard-hue-demo-tickets-by-status);
+}
+[data-dashboard-module="demo-tickets-per-day"] {
+  --dashboard-hue: var(--dashboard-hue-demo-tickets-per-day);
+}
+/* demo-ticket:end */
+[data-dashboard-module="new-accounts"],
+[data-admin-strip="users"] {
+  --dashboard-hue: var(--dashboard-hue-new-accounts);
+}
+
+/*
+ * Admin chart tokens, Soft style (ADR-0025). Named variables per style and
+ * theme; the canvas reads them with getComputedStyle and redraws when the theme changes. Marks keep 3:1 against
+ * the card; negative values use the destructive hue. Glow has its own set below; Pro adds its own later.
+ */
+:root {
+  --chart-soft-bar: oklch(0.58 0.13 190);
+  --chart-soft-bar-negative: oklch(0.577 0.245 27.3);
+  --chart-soft-hatch: oklch(0.9 0.04 190);
+  --chart-soft-grid: oklch(0.922 0 0);
+  --chart-soft-text: oklch(0.5 0 0);
+  --chart-soft-focus: oklch(0.205 0 0);
+}
+.dark {
+  --chart-soft-bar: oklch(0.76 0.12 190);
+  --chart-soft-bar-negative: oklch(0.704 0.191 22.2);
+  --chart-soft-hatch: oklch(0.3 0.03 190);
+  --chart-soft-grid: oklch(1 0 0 / 12%);
+  --chart-soft-text: oklch(0.78 0 0);
+  --chart-soft-focus: oklch(0.985 0 0);
+}
+
+/*
+ * Glow (ADR-0025): bars that fade into the card (`bar` is the solid end, which keeps 3:1
+ * against the card; `-fade` is where it dissolves), buckets out of focus dimmed, a gradient line (`line-from` to
+ * `line-to`) and a soft halo that exists in dark only (transparent in light), and status pills. Marks and
+ * text keep 3:1 against the card in both themes.
+ */
+:root {
+  --chart-glow-bar: oklch(0.52 0.21 285);
+  --chart-glow-bar-fade: oklch(0.52 0.21 285 / 8%);
+  --chart-glow-bar-dim: oklch(0.52 0.21 285 / 38%);
+  --chart-glow-bar-dim-fade: oklch(0.52 0.21 285 / 4%);
+  --chart-glow-bar-negative: oklch(0.55 0.23 18);
+  --chart-glow-bar-negative-fade: oklch(0.55 0.23 18 / 8%);
+  --chart-glow-hatch: oklch(0.93 0.04 285);
+  --chart-glow-grid: oklch(0.922 0.01 285);
+  --chart-glow-text: oklch(0.5 0.03 285);
+  --chart-glow-focus: oklch(0.3 0.12 285);
+  --chart-glow-line-from: oklch(0.55 0.22 300);
+  --chart-glow-line-to: oklch(0.55 0.15 235);
+  --chart-glow-halo: transparent;
+}
+.dark {
+  --chart-glow-bar: oklch(0.76 0.15 290);
+  --chart-glow-bar-fade: oklch(0.76 0.15 290 / 6%);
+  --chart-glow-bar-dim: oklch(0.76 0.15 290 / 34%);
+  --chart-glow-bar-dim-fade: oklch(0.76 0.15 290 / 3%);
+  --chart-glow-bar-negative: oklch(0.75 0.17 20);
+  --chart-glow-bar-negative-fade: oklch(0.75 0.17 20 / 6%);
+  --chart-glow-hatch: oklch(0.3 0.05 290);
+  --chart-glow-grid: oklch(1 0 0 / 10%);
+  --chart-glow-text: oklch(0.78 0.03 290);
+  --chart-glow-focus: oklch(0.985 0.01 290);
+  --chart-glow-line-from: oklch(0.78 0.16 310);
+  --chart-glow-line-to: oklch(0.8 0.13 220);
+  --chart-glow-halo: oklch(0.78 0.16 300 / 60%);
+}
+
+/*
+ * Pro (ADR-0025): ticker figures with small up/down lines, thin up/down bars over dim
+ * secondary bars, micro bars in tables and thin rings. Green is up, red is down, slate is the secondary series and the
+ * ring/micro-bar ink. Marks and text keep 3:1 against the card in both themes; the ring and micro-bar tracks are decorative.
+ */
+:root {
+  --chart-pro-bar: oklch(0.5 0.14 155);
+  --chart-pro-bar-negative: oklch(0.55 0.22 27);
+  --chart-pro-bar-dim: oklch(0.62 0.03 250);
+  --chart-pro-hatch: oklch(0.93 0.01 250);
+  --chart-pro-grid: oklch(0.922 0 0);
+  --chart-pro-text: oklch(0.5 0.02 250);
+  --chart-pro-focus: oklch(0.25 0.03 250);
+  --chart-pro-ring: oklch(0.45 0.08 250);
+  --chart-pro-track: oklch(0.93 0.01 250);
+}
+.dark {
+  --chart-pro-bar: oklch(0.78 0.16 155);
+  --chart-pro-bar-negative: oklch(0.72 0.19 22);
+  --chart-pro-bar-dim: oklch(0.55 0.03 250);
+  --chart-pro-hatch: oklch(0.3 0.02 250);
+  --chart-pro-grid: oklch(1 0 0 / 12%);
+  --chart-pro-text: oklch(0.78 0.02 250);
+  --chart-pro-focus: oklch(0.985 0 0);
+  --chart-pro-ring: oklch(0.82 0.07 250);
+  --chart-pro-track: oklch(0.3 0.02 250);
+}
+
+/* The chart-like parts outside a canvas follow the Chart style too: Glow draws a change as a status pill outlined with its own text colour (so "lower is better" colours carry over). */
+[data-chart-style="glow"] [data-chart-part="change"] {
+  border-radius: 9999px;
+  padding: 0.125rem 0.5rem;
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, currentColor 45%, transparent);
+}

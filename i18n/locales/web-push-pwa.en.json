@@ -1,0 +1,53 @@
+{
+  "admin": {
+    "shell": {
+      "pushBanner": {
+        "label": "Browser push",
+        "message": "Get new alerts on this computer even when the panel is closed.",
+        "turnOn": "Turn on",
+        "notNow": "Not now"
+      }
+    },
+    "account": {
+      "notifications": {
+        "device": {
+          "install": {
+            "title": "Install app",
+            "help": "Open {appName} in its own window, like an app.",
+            "button": "Install {appName}",
+            "hint": "Use the install icon in your browser's address bar",
+            "installed": "Installed app"
+          },
+          "push": {
+            "title": "Browser push on this device",
+            "help": "Get alerts on this computer even when the panel is closed.",
+            "on": "This browser: On",
+            "off": "This browser: Off",
+            "turnOn": "Turn on push here",
+            "turnOff": "Turn off here",
+            "test": "Send test notification",
+            "denied": "Notifications are blocked for this site.",
+            "deniedHelp": "Allow notifications for this site in your browser's site settings, then reload this page.",
+            "ios": "Add {appName} to your Home Screen first.",
+            "iosHelp": "In Safari, tap Share, then Add to Home Screen. Then open the app from your Home Screen and turn push on there.",
+            "unsupported": "This browser can't receive push notifications.",
+            "unsupportedHelp": "Use Chrome, Edge, Firefox or Safari. Your Inbox still has everything.",
+            "degraded": "Push is temporarily unavailable since {time}. Your Inbox still has everything.",
+            "toast": {
+              "on": "Push is on for this browser.",
+              "off": "Push is off for this browser.",
+              "dismissed": "Permission wasn't given, so push stays off.",
+              "onFailed": "Couldn't turn on push. Please try again.",
+              "offFailed": "Couldn't turn off push. Please try again.",
+              "testSent": "Test notification sent.",
+              "testRejected": "The push service no longer knows this browser. Turn push off and on again.",
+              "testUnavailable": "Push is unavailable right now. Try again later.",
+              "testRateLimited": "Wait a little before sending another test.",
+              "testFailed": "Couldn't send the test notification."
+            }
+          }
+        }
+      }
+    }
+  }
+}

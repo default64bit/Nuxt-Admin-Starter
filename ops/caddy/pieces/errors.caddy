@@ -1,0 +1,8 @@
+# Error-tracking host (the GlitchTip Optional piece, profile `monitoring`). Imported only when ERRORS_DOMAIN is set
+# (compose.prod.yaml sets CADDY_ERRORS_SITE to this file's path); otherwise the host does not exist.
+{$ERRORS_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy glitchtip:8000 {
+		header_up X-Forwarded-For {client_ip}
+	}
+}

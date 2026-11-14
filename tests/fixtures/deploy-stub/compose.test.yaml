@@ -1,0 +1,43 @@
+# Dry-run overlay: replaces real images with local stubs. Layered after compose.yaml and compose.prod.yaml.
+x-release: &release
+  image: nuxt-admin-starter-deploy-stub:${APP_IMAGE_TAG}
+  pull_policy: never
+  volumes:
+    - ${DRYRUN_LOG_DIR}:/log
+x-infra: &infra
+  image: nuxt-admin-starter-deploy-stub:infra
+  pull_policy: never
+  command: !override [sleep, infinity]
+
+services:
+  app:
+    <<: *release
+    ports: !override
+      - 127.0.0.1:${APP_HOST_PORT}:3000
+    healthcheck:
+      interval: 2s
+      timeout: 3s
+      retries: 3
+      start_period: 0s
+  notification-worker: *release
+  migrate: *release
+  seed: *release
+  db-ensure: *release
+  monitoring-db-init: *release
+  storage-init: *release
+  media-gc: *release
+  # `!reset` does not survive a YAML merge key, so each infra service resets its host ports itself: a dry-run must
+  # never bind 5432 or 8000 on the host (CI's integration job already has PostgreSQL on 5432).
+  postgres:
+    <<: *infra
+    ports: !reset []
+    volumes: !reset []
+    healthcheck:
+      test: !override [CMD, "true"]
+  glitchtip:
+    <<: *infra
+    ports: !reset []
+  rustfs:
+    <<: *infra
+    ports: !reset []
+    volumes: !reset []

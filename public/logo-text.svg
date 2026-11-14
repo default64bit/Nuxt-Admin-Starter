@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="48" viewBox="0 0 320 48" role="img" aria-label="Nuxt Admin Starter">
+  <style>
+    text { fill: #171717; font: 600 28px Inter, ui-sans-serif, system-ui, sans-serif; }
+    @media (prefers-color-scheme: dark) { text { fill: #fafafa; } }
+  </style>
+  <text x="0" y="34">Nuxt Admin Starter</text>
+</svg>

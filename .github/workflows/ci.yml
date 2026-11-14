@@ -1,0 +1,273 @@
+name: CI
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [main]
+  # The release workflow calls this one for pushes to main and version tags.
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Superseded develop pushes and PR runs are cancelled; a run called for a release is never cancelled.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop') }}
+
+env:
+  CI: "true"
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit tests, build
+    runs-on: ubuntu-24.04
+    env:
+      # nuxt typecheck can run out of memory with Node's default heap on a small hosted runner.
+      NODE_OPTIONS: --max-old-space-size=5120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just lint
+      - run: just typecheck
+      - run: just test
+      - run: just build
+      - run: just perf-chart-chunk
+
+  integration:
+    name: Postgres-backed integration tests
+    runs-on: ubuntu-24.04
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      # A role that may create and drop the throwaway databases the tests use.
+      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just db-check
+      - run: just test-integration
+
+  # Compose validation and every infra test that needs Docker. Each such test runs here and in no other job: they skip
+  # unless INFRA_TESTS=1, which only `just test-compose` sets. Later infra pieces add their tests to this job.
+  deploy-automation:
+    name: Compose validation and Docker infra tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      # No .env exists in CI, so both resolve the committed .env.example (its COMPOSE_PROFILES included).
+      - run: just compose-check
+      - run: just test-compose
+
+  # The browser suite, on every run (no change filter). `test-e2e-sharded` gives each of 3 shards its own database
+  # (a clone of a migrated template with the production seed only) and its own server, and retries a failure once:
+  # a test that passes on the retry is reported as flaky (a warning annotation), not hidden. The `@cross-browser`
+  # subset then runs in Firefox and WebKit. The a11y gate is the axe checks inside the specs.
+  e2e:
+    name: Playwright end-to-end tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      # The role that owns the shard databases and the maintenance role that may create them.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just playwright-install --with-deps
+      - run: just test-e2e-sharded 3
+      - run: just test-e2e-cross-browser
+      # The HTML reports, traces and screenshots of every shard, kept only when something failed.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # Proves every Optional piece is genuinely Off-able: empty COMPOSE_PROFILES (so only the core Compose service,
+  # PostgreSQL, runs) and none of the Channel or provider keys. The app is built on the host and run in production
+  # mode (`NUXT_APP_ENV=production`) against the Compose database. The `just db-*` recipes run inside the Docker
+  # stack, so this job calls the package scripts they wrap. Without an SMS provider the app still boots (sign-in codes
+  # answer 503), so the smoke check covers liveness, readiness, the landing page and the sign-in page.
+  all-off:
+    name: App boots with every Optional piece Off
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      COMPOSE_PROFILES: ""
+      # Throwaway values for this job only. The *_DOCKER and password keys satisfy Compose interpolation.
+      POSTGRES_PASSWORD: ci-postgres-password
+      APP_DB_PASSWORD: ci-app-password
+      RUSTFS_ACCESS_KEY: ci-rustfs-access-key
+      RUSTFS_SECRET_KEY: ci-rustfs-secret-key
+      DATABASE_URL_DOCKER: postgres://app:ci-app-password@postgres:5432/app
+      DATABASE_ADMIN_URL_DOCKER: postgres://postgres:ci-postgres-password@postgres:5432/postgres
+      DATABASE_URL: postgres://app:ci-app-password@localhost:5432/app
+      DATABASE_ADMIN_URL: postgres://postgres:ci-postgres-password@localhost:5432/postgres
+      NUXT_DATABASE_URL: postgres://app:ci-app-password@localhost:5432/app
+      NUXT_SESSION_PASSWORD: ci-session-password-0123456789abcdef0123
+      NUXT_IP_HASH_SECRET: ci-ip-hash-secret-0123456789abcdef0123456
+      NUXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just services-up
+      - run: corepack pnpm db:ensure
+      - run: corepack pnpm db:migrate
+      # The production seed only: Permissions and the `super` Role. No Default admin phone is set.
+      - run: corepack pnpm db:seed
+      - run: just build
+      - name: Start the built app
+        env:
+          NUXT_APP_ENV: production
+          NODE_ENV: production
+          NITRO_HOST: 127.0.0.1
+          PORT: "3000"
+        run: nohup node .output/server/index.mjs > app.log 2>&1 &
+      - run: just smoke http://127.0.0.1:3000
+      - name: App log
+        if: failure()
+        run: cat app.log || true
+      - name: Stop the stack
+        if: always()
+        # Same file pair `just services-up` used (the justfile exports COMPOSE_FILE; the base file alone is not a valid project).
+        env:
+          COMPOSE_FILE: compose.yaml:compose.dev.yaml
+        run: docker compose down --volumes --remove-orphans
+
+  security:
+    name: Dependency audit and secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - run: just audit
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # starter-meta:start
+  # Proves the Project path: `just first-run` with the demo removed and every Optional piece Off, then the gates a new Project
+  # runs first. Starter-only: first-run strips this job along with the other starter-meta lines.
+  first-run:
+    name: Project after first-run (demo removed, all Off)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - name: Run first-run non-interactively
+        run: just first-run name-en="Example Admin" name-fa="پنل نمونه" slug=example-admin demo=remove profiles=none push=off
+      - run: just typecheck
+      - run: just lint
+      - run: just test
+      - run: just build
+      - run: just perf-chart-chunk
+      # The integration harness picks its own databases; the generated .env would point it at a local stack instead.
+      - run: rm -f .env
+      - run: just test-integration
+  # starter-meta:end

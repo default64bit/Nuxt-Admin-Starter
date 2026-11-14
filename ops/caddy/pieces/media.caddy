@@ -1,0 +1,15 @@
+# Media host (the media Optional piece, profile `media`): serves the PUBLIC bucket of RustFS read-only. Imported only when
+# MEDIA_DOMAIN is set (compose.prod.yaml sets CADDY_MEDIA_SITE to this file's path); otherwise the host does not exist.
+# The private bucket and the S3 API of anything else are never reachable through it.
+{$MEDIA_DOMAIN} {
+	@publicMedia {
+		method GET HEAD
+		path /{$NUXT_S3_PUBLIC_BUCKET}/*
+	}
+	handle @publicMedia {
+		reverse_proxy rustfs:9000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	respond 404
+}

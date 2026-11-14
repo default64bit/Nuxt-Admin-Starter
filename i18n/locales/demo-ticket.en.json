@@ -1,0 +1,175 @@
+{
+  "admin": {
+    "nav": {
+      "groups": {
+        "work": "Work"
+      },
+      "items": {
+        "demoTickets": "Demo tickets"
+      }
+    },
+    "permissions": {
+      "groups": {
+        "demoTickets": {
+          "label": "Demo tickets",
+          "hint": "The Reference module's demo tickets."
+        }
+      },
+      "keys": {
+        "viewDemoTickets": {
+          "label": "View demo tickets",
+          "hint": "Open the Demo tickets list and each ticket's dialog."
+        },
+        "manageDemoTickets": {
+          "label": "Manage demo tickets",
+          "hint": "Create, edit, move forward and delete demo tickets."
+        }
+      }
+    },
+    "auditLog": {
+      "groups": {
+        "demoTickets": "Demo tickets"
+      },
+      "actions": {
+        "demoTicketCreated": "Demo ticket created",
+        "demoTicketUpdated": "Demo ticket updated",
+        "demoTicketStatusChanged": "Demo ticket status changed",
+        "demoTicketDeleted": "Demo ticket deleted"
+      },
+      "fields": {
+        "title": "Title",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "descriptionChanged": "Description changed",
+        "imageChanged": "Image changed"
+      }
+    },
+    "demoTickets": {
+      "newButton": "New demo ticket",
+      "searchLabel": "Search demo tickets",
+      "searchPlaceholder": "Search by title",
+      "clearFilters": "Clear filters",
+      "loadError": "Demo tickets could not be loaded.",
+      "unassigned": "Unassigned",
+      "unnamedUser": "Unnamed user",
+      "waitingLong": "Waiting long",
+      "waitingLongHint": "Open for over 24 hours, or in progress for over 48 hours.",
+      "columns": {
+        "title": "Title",
+        "status": "Status",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "created": "Created"
+      },
+      "statuses": {
+        "open": "Open",
+        "inProgress": "In progress",
+        "resolved": "Resolved",
+        "closed": "Closed"
+      },
+      "priorities": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High"
+      },
+      "filters": {
+        "status": "Status",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "allStatuses": "All statuses",
+        "allPriorities": "All priorities",
+        "allAssignees": "All assignees"
+      },
+      "cards": {
+        "open": "Open",
+        "openNamed": "Open {title}"
+      },
+      "board": {
+        "label": "Demo tickets board",
+        "hint": "Drag a ticket's top bar to the next column, or use its button.",
+        "viewOnly": "You can follow the tickets but not move them.",
+        "moveTo": "Move to {status}",
+        "dragHandle": "Drag to {status}",
+        "moved": "“{title}” moved to {status}.",
+        "returned": "“{title}” stayed in {status}; the move did not go through.",
+        "stale": "This ticket changed. Here's its current status.",
+        "failed": "The ticket could not be moved."
+      },
+      "noResults": {
+        "title": "No demo tickets match",
+        "description": "Try a different search or clear the filters."
+      },
+      "empty": {
+        "title": "No demo tickets yet",
+        "description": "Created demo tickets appear here, newest first."
+      },
+      "fields": {
+        "title": "Title",
+        "description": "Description",
+        "priority": "Priority",
+        "assignee": "Assignee",
+        "status": "Status",
+        "createdBy": "Created by"
+      },
+      "dialog": {
+        "createTitle": "New demo ticket",
+        "createDescription": "A new ticket starts open.",
+        "editTitle": "Edit demo ticket",
+        "editDescription": "A ticket moves forward only: open, in progress, resolved, closed.",
+        "viewTitle": "Demo ticket",
+        "viewDescription": "You can view demo tickets but not change them.",
+        "create": "Create ticket",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "close": "Close",
+        "loading": "Loading the ticket",
+        "statusHint": "A ticket can only move to the next status.",
+        "statusFinal": "A closed ticket can't move any further.",
+        "loadError": "This demo ticket could not be loaded.",
+        "notFound": "This demo ticket no longer exists."
+      },
+      "delete": {
+        "button": "Delete",
+        "title": "Delete this demo ticket?",
+        "description": "“{title}” is deleted for good. This can't be undone.",
+        "confirm": "Delete ticket",
+        "cancel": "Keep ticket"
+      },
+      "errors": {
+        "required": "This field is required.",
+        "tooLong": "This is too long.",
+        "controlCharacters": "Remove characters that can't be shown.",
+        "invalid": "This value isn't valid.",
+        "assigneeUnknown": "Choose an active user."
+      },
+      "toast": {
+        "created": "Demo ticket created",
+        "saved": "Demo ticket saved",
+        "deleted": "Demo ticket deleted",
+        "stale": "This demo ticket was changed by someone else. It was reloaded.",
+        "invalidTransition": "A ticket can only move to the next status. It was reloaded.",
+        "gone": "This demo ticket no longer exists.",
+        "failed": "Something went wrong. Please try again."
+      }
+    },
+    "dashboard": {
+      "modules": {
+        "demoTicketsByStatus": "Demo tickets by status",
+        "demoTicketsPerDay": "Demo tickets created per day"
+      },
+      "needsAttention": {
+        "rows": {
+          "openDemoTickets": "Open demo tickets"
+        }
+      },
+      "demoTickets": {
+        "openTickets": "Open demo tickets",
+        "created": "Created",
+        "day": "Day",
+        "viewAsChart": "View as chart",
+        "viewAsTable": "View as table",
+        "perDaySummary": "Demo tickets created per day over {days} days: {total} in all"
+      }
+    }
+  }
+}

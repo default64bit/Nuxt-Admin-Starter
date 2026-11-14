@@ -1,0 +1,26 @@
+# Normalize text to LF in the repository and in every working tree, regardless of the developer's
+# core.autocrlf. Shell scripts, the justfile and Dockerfiles are bind-mounted into Linux containers,
+# where a CRLF breaks the shebang ("bad interpreter") and `\r` leaks into values.
+* text=auto eol=lf
+
+# Must stay LF even if the rule above is ever loosened.
+*.sh text eol=lf
+justfile text eol=lf
+Dockerfile text eol=lf
+Dockerfile.* text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Binary assets: never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary

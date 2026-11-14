@@ -1,0 +1,78 @@
+# Production overlay: registry images only, never a `build:` section. The release workflow builds `app` (runtime
+# target) and `tools` once per commit and pushes them tagged with the full commit SHA; the base images below are
+# mirrored unchanged under `base/`, with the same tag and digest as in compose.yaml.
+x-tools-image: &tools-image
+  image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/tools:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+
+services:
+  postgres:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+  app:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/app:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+  notification-worker: *tools-image
+  db-ensure: *tools-image
+  migrate: *tools-image
+  seed: *tools-image
+  monitoring-db-init: *tools-image
+  storage-init: *tools-image
+  media-gc: *tools-image
+  backup:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/backup:${APP_IMAGE_TAG:?Set APP_IMAGE_TAG to the release commit SHA}
+  rustfs:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+  glitchtip:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+
+  # Edge proxy (Optional piece, profile `edge`; docs/optional-pieces/caddy.md). Stock Caddy without plugins, the GHCR
+  # mirror of ops/caddy/base-images.txt; certificates by HTTP-01/TLS-ALPN-01. With the profile Off nothing here runs
+  # and the Project's own proxy reaches the app on the loopback port the shared file publishes.
+  caddy:
+    image: ${APP_IMAGE_REPO:-ghcr.io/default64bit/nuxt-admin-starter}/base/caddy:2.10.2@sha256:c3d7ee5d2b11f9dc54f947f68a734c84e9c9666c92c88a7f30b9cba5da182adb
+    profiles: [edge]
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+      SITE_DOMAIN: ${SITE_DOMAIN:-app.example.com}
+      # CADDY_ACME_CA is the Let's Encrypt directory; set it to the staging directory in .env for the first issuance only.
+      CADDY_ACME_CA: ${CADDY_ACME_CA:-https://acme-v02.api.letsencrypt.org/directory}
+      # Hosts of other Optional pieces plug in here (see the end of the Caddyfile for the pattern).
+      ERRORS_DOMAIN: ${ERRORS_DOMAIN:-}
+      CADDY_ERRORS_SITE: ${ERRORS_DOMAIN:+/etc/caddy/pieces/errors.caddy}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN:-}
+      CADDY_MEDIA_SITE: ${MEDIA_DOMAIN:+/etc/caddy/pieces/media.caddy}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./ops/caddy/pieces:/etc/caddy/pieces:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+      glitchtip:
+        condition: service_started
+        required: false
+      rustfs:
+        condition: service_started
+        required: false
+    healthcheck:
+      test: [CMD, caddy, validate, --config, /etc/caddy/Caddyfile]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks: [backend]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+volumes:
+  # Issued certificates and the ACME account: losing them re-issues everything and can hit Let's Encrypt rate limits.
+  caddy-data:
+  caddy-config:

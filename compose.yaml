@@ -1,0 +1,308 @@
+# Shared base. `compose.dev.yaml` (bind-mounted dev image with HMR) or `compose.prod.yaml` (registry images) is
+# layered on top by the justfile. Optional pieces add services behind the profiles `media`, `monitoring`, `edge`
+# and `backup`; `COMPOSE_PROFILES` in `.env` is the one list of what runs (ADR-0029). `ops` holds the one-shot jobs.
+name: nuxt-admin-starter
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c
+    restart: unless-stopped
+    # Docker's 64 MB default is too small for the parallel queries of larger reports.
+    shm_size: 256mb
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      APP_DB_USER: ${APP_DB_USER:-app}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
+    ports:
+      - 127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./scripts/postgres/10-create-app-role.sh:/docker-entrypoint-initdb.d/10-create-app-role.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    networks: [backend]
+    logging: *logging
+
+  app:
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      PORT: 3000
+      NUXT_APP_ENV: ${NUXT_APP_ENV:-production}
+      NUXT_DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      NUXT_SESSION_PASSWORD: ${NUXT_SESSION_PASSWORD:?Set NUXT_SESSION_PASSWORD in .env}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
+      NUXT_IP_HASH_SECRET: ${NUXT_IP_HASH_SECRET:?Set NUXT_IP_HASH_SECRET in .env}
+      # Sign-in codes by SMS (.specs/authentication/spec.md): blank provider means mock in local/test and none elsewhere.
+      NUXT_SMS_PROVIDER: ${NUXT_SMS_PROVIDER:-}
+      NUXT_SMS_ALLOW_MOCK_IN_PRODUCTION: ${NUXT_SMS_ALLOW_MOCK_IN_PRODUCTION:-false}
+      NUXT_SMS_TEMPLATE_OTP_FA: ${NUXT_SMS_TEMPLATE_OTP_FA:-}
+      NUXT_SMS_TEMPLATE_OTP_EN: ${NUXT_SMS_TEMPLATE_OTP_EN:-}
+      NUXT_KAVENEGAR_API_KEY: ${NUXT_KAVENEGAR_API_KEY:-}
+      NUXT_KAVENEGAR_TIMEOUT_MS: ${NUXT_KAVENEGAR_TIMEOUT_MS:-10000}
+      # Error capture (the GlitchTip Optional piece): empty means not configured and nothing is sent.
+      NUXT_PUBLIC_GLITCHTIP_DSN: ${NUXT_PUBLIC_GLITCHTIP_DSN:-}
+      NUXT_GLITCHTIP_SERVER_DSN: ${NUXT_GLITCHTIP_SERVER_DSN:-}
+      # Web Push (Optional piece): empty keys mean not configured.
+      NUXT_VAPID_PUBLIC_KEY: ${NUXT_VAPID_PUBLIC_KEY:-}
+      NUXT_VAPID_PRIVATE_KEY: ${NUXT_VAPID_PRIVATE_KEY:-}
+      NUXT_VAPID_SUBJECT: ${NUXT_VAPID_SUBJECT:-}
+      NUXT_ADMIN_CHANNEL_PUSH_ENABLED: ${NUXT_ADMIN_CHANNEL_PUSH_ENABLED:-true}
+      # Object storage (the media Optional piece): the identity keys below are the on-switch. Empty keys mean "not
+      # configured" (readiness skips storage, upload and variant routes answer 503); with them the endpoint is the rustfs service.
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+      NUXT_PUBLIC_MEDIA_BASE_URL: ${NUXT_PUBLIC_MEDIA_BASE_URL:-}
+    ports:
+      - 127.0.0.1:${APP_HOST_PORT:-3000}:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+        required: false
+      storage-init:
+        condition: service_completed_successfully
+        required: false
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [backend]
+    logging: *logging
+
+  # The notification worker (core, no profile; ADR-0021): delivers outbox rows to the Channels after the business
+  # transaction committed. With no Channel configured it only keeps the outbox tidy. The app never waits for it.
+  notification-worker:
+    restart: unless-stopped
+    command: [corepack, pnpm, "worker:notifications"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
+      WORKER_HEARTBEAT_FILE: /tmp/worker-heartbeat
+      # Web Push (Optional piece): empty keys mean not configured.
+      NUXT_VAPID_PUBLIC_KEY: ${NUXT_VAPID_PUBLIC_KEY:-}
+      NUXT_VAPID_PRIVATE_KEY: ${NUXT_VAPID_PRIVATE_KEY:-}
+      NUXT_VAPID_SUBJECT: ${NUXT_VAPID_SUBJECT:-}
+      NUXT_ADMIN_CHANNEL_PUSH_ENABLED: ${NUXT_ADMIN_CHANNEL_PUSH_ENABLED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD-SHELL, "test $$(( $$(date +%s) - $$(stat -c %Y /tmp/worker-heartbeat) )) -lt 60"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks: [backend]
+    logging: *logging
+
+  # One-shot jobs (`just db-*`): run from the dev image locally and from the tools image in production.
+  db-ensure:
+    profiles: [ops]
+    command: [corepack, pnpm, "db:ensure"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL_DOCKER:?Set DATABASE_ADMIN_URL_DOCKER in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  migrate:
+    profiles: [ops]
+    command: [corepack, pnpm, "db:migrate"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  seed:
+    profiles: [ops]
+    command: [corepack, pnpm, "db:seed"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      DEFAULT_ADMIN_PHONE: ${DEFAULT_ADMIN_PHONE:-}
+      DEFAULT_ADMIN_GIVEN_NAME: ${DEFAULT_ADMIN_GIVEN_NAME:-}
+      DEFAULT_ADMIN_FAMILY_NAME: ${DEFAULT_ADMIN_FAMILY_NAME:-}
+      # Only the dev seed (`just db-seed-dev`) uses these, to store its sample images.
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  # RustFS object storage (Optional piece, profile `media`; docs/optional-pieces/media.md): S3-compatible, with a private
+  # and a public bucket. The app never waits for it (`required: false`); the root credentials live here and in
+  # storage-init only, the app uses the least-privilege identity storage-init creates. Never published beyond loopback.
+  rustfs:
+    profiles: [media]
+    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    restart: unless-stopped
+    command: [/data]
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?Set RUSTFS_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?Set RUSTFS_SECRET_KEY in .env}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ADDRESS: ":9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_OBS_LOGGER_LEVEL: error
+      RUSTFS_OBS_LOG_DIRECTORY: /var/log/rustfs/
+    ports:
+      - 127.0.0.1:${RUSTFS_S3_HOST_PORT:-9000}:9000
+      - 127.0.0.1:${RUSTFS_CONSOLE_HOST_PORT:-9001}:9001
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/var/log/rustfs
+    networks: [backend]
+    logging: *logging
+
+  # Creates the two buckets, the public-read policy and the app's S3 identity (idempotent). Runs with `just up`/`dev`
+  # and from `just deploy`; `just storage-ensure` runs it alone.
+  storage-init:
+    profiles: [media]
+    restart: "no"
+    command: [corepack, pnpm, "storage:init"]
+    environment:
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?Set RUSTFS_ACCESS_KEY in .env}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY:?Set RUSTFS_SECRET_KEY in .env}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    depends_on:
+      rustfs:
+        condition: service_started
+    networks: [backend]
+    logging: *logging
+
+  # One-shot media cleanup (`just media-gc`): removes uploads nobody attached and replaced or removed images, once older
+  # than the grace period. Safe to repeat; scheduling it is an operations choice.
+  media-gc:
+    profiles: [ops]
+    command: [corepack, pnpm, "media:gc"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
+      NUXT_S3_ENDPOINT: ${NUXT_S3_ACCESS_KEY:+http://rustfs:9000}
+      NUXT_S3_REGION: ${NUXT_S3_REGION:-us-east-1}
+      NUXT_S3_ACCESS_KEY: ${NUXT_S3_ACCESS_KEY:-}
+      NUXT_S3_SECRET_KEY: ${NUXT_S3_SECRET_KEY:-}
+      NUXT_S3_PRIVATE_BUCKET: ${NUXT_S3_PRIVATE_BUCKET:-}
+      NUXT_S3_PUBLIC_BUCKET: ${NUXT_S3_PUBLIC_BUCKET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rustfs:
+        condition: service_started
+        required: false
+    networks: [backend]
+    logging: *logging
+
+  # GlitchTip (Optional piece, profile `monitoring`): self-hosted, Sentry-compatible error tracking in its own logical
+  # database and role on the shared PostgreSQL. The app never waits for it: capture is best effort (ADR-0015).
+  monitoring-db-init:
+    profiles: [monitoring]
+    restart: "no"
+    command: [corepack, pnpm, "monitoring:db:ensure"]
+    environment:
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL_DOCKER:?Set DATABASE_ADMIN_URL_DOCKER in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      GLITCHTIP_DB_NAME: ${GLITCHTIP_DB_NAME:-glitchtip}
+      GLITCHTIP_DB_USER: ${GLITCHTIP_DB_USER:-glitchtip_app}
+      GLITCHTIP_DB_PASSWORD: ${GLITCHTIP_DB_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+  glitchtip:
+    profiles: [monitoring]
+    image: glitchtip/glitchtip:6.2.6@sha256:a3d8eb1b36c1e1603d55ab32711ea3dd8115874742a781a57391a62a16e0dff6
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${GLITCHTIP_DB_USER:-glitchtip_app}:${GLITCHTIP_DB_PASSWORD:-}@postgres:5432/${GLITCHTIP_DB_NAME:-glitchtip}
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-}
+      PORT: "8000"
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://127.0.0.1:8000}
+      EMAIL_URL: consolemail://
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-errors@example.com}
+      ENABLE_USER_REGISTRATION: "False"
+      GLITCHTIP_EMBED_WORKER: "True"
+      GLITCHTIP_EVENT_RETENTION_DAYS: ${GLITCHTIP_EVENT_RETENTION_DAYS:-90}
+      ALLOWED_HOSTS: ${GLITCHTIP_ALLOWED_HOSTS:-localhost,127.0.0.1,glitchtip,errors.example.com}
+      CSRF_TRUSTED_ORIGINS: ${GLITCHTIP_DOMAIN:-http://127.0.0.1:8000}
+    ports:
+      - 127.0.0.1:${GLITCHTIP_HOST_PORT:-8000}:8000
+    depends_on:
+      monitoring-db-init:
+        condition: service_completed_successfully
+    networks: [backend]
+    logging: *logging
+
+  # Database backups (Optional piece, profile `backup`; docs/optional-pieces/backups.md): a nightly `pg_dump -Fc` to an
+  # off-host S3-compatible bucket, 14 days kept. The image is the `backup` target of the Dockerfile (dev overlay builds it,
+  # production pulls it). The app never waits for it, and without BACKUP_S3_* it only logs a warning and idles.
+  backup:
+    profiles: [backup]
+    restart: unless-stopped
+    environment:
+      # The superuser connection that dumps and restores (libpq variables, so no URL escaping of the password).
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-postgres}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      PGDATABASE: ${POSTGRES_DB:-app}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-us-east-1}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:-}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:-}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:-}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-db}
+      BACKUP_AT: ${BACKUP_AT:-03:30}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_MAX_AGE_HOURS: ${BACKUP_MAX_AGE_HOURS:-36}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *logging
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  rustfs-data:
+  rustfs-logs:

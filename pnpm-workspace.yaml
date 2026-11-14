@@ -1,0 +1,7 @@
+# pnpm 11+ uses pnpm-workspace.yaml for dependency build-script approvals.
+# Keep this allowlist narrow; review any new install-script request during dependency updates.
+allowBuilds:
+  esbuild: true
+  '@parcel/watcher': true
+  unrs-resolver: true
+  vue-demi: true
