@@ -56,6 +56,10 @@ export function useTestDatabase(): TestDatabase {
     admin = new pg.Client({ connectionString: adminUrl });
     await admin.connect();
     await admin.query(`CREATE DATABASE "${name}"`);
+    // A server under test is started after this hook and inherits the environment. A local `.env` (the one `just
+    // first-run` creates) sets NUXT_DATABASE_URL, which beats the `databaseUrl` a suite passes in its nuxtConfig and
+    // would point the server at the development database. Setting the variable first stops Nuxt loading it from `.env`.
+    process.env.NUXT_DATABASE_URL = urlFor(name);
     pool = new pg.Pool({ connectionString: urlFor(name) });
     // The forced DROP DATABASE in teardown can terminate a connection that is still closing (57P01); without a
     // listener that error is unhandled and fails the whole run.

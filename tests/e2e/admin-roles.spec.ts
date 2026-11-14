@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import pg from "pg";
 import type { Page } from "@playwright/test";
+import { PERMISSION_GROUPS } from "../../shared/constants/permission-catalog";
 import { PERMISSION_KEYS } from "../../shared/constants/permissions";
 import { createAdminAccount, type AdminAccount } from "./support/admin-session";
 import { expectNoAxeViolations } from "./support/axe";
@@ -92,7 +93,7 @@ test("the editor: group counts, ticking a Permission ticks what it needs, and a 
   await manager.signIn(page);
   await gotoHydrated(page, `/en/admin/roles/${ids.spare}`);
   await expect(page.getByLabel("Role name")).toHaveValue(`Spare ${TAG}`);
-  await expect(page.locator('[data-slot="permission-groups"] button')).toHaveCount(3);
+  await expect(page.locator('[data-slot="permission-groups"] button')).toHaveCount(PERMISSION_GROUPS.length);
   await expect(group(page, "users")).toHaveAttribute("aria-current", "true");
   await expect(count(page, "users")).toHaveText("0/4");
   await expect(count(page, "audit")).toHaveText("1/1");

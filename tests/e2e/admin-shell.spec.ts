@@ -33,8 +33,8 @@ for (const [prefix, dir, lang] of [
     await gotoHydrated(page, `${prefix}/admin`);
     await expect(page.locator("html")).toHaveAttribute("dir", dir);
     await expect(navLinks(page)).toHaveCount(ADMIN_NAV.length);
-    // The Dashboard has no group heading; the other groups do.
-    await expect(page.locator('[data-slot="sidebar-group-label"]')).toHaveCount(2);
+    // The Dashboard has no group heading; every other group that holds an item does.
+    await expect(page.locator('[data-slot="sidebar-group-label"]')).toHaveCount(new Set(ADMIN_NAV.map((entry) => entry.group)).size - 1);
     // The sidebar sits on the start side: right in RTL, left in LTR.
     const sidebar = await page.locator('[data-slot="sidebar-container"]').boundingBox();
     const viewport = page.viewportSize()!;
