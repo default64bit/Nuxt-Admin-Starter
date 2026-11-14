@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import { dashboardModule, moduleTitleKey, type DashboardWidth } from "~~/shared/constants/dashboard-modules";
+import { dashboardModule, FIXED_FIRST_KEY, moduleTitleKey, type DashboardWidth } from "~~/shared/constants/dashboard-modules";
 import type { DashboardPreferences } from "~~/shared/schemas/admin-dashboard";
 import { parseApiError } from "~~/shared/utils/api-error-client";
 import { defaultLayout, moveEntry, sameLayout, visibleEntries, type DashboardLayoutEntry } from "~~/shared/utils/dashboard-layout";
@@ -76,8 +76,8 @@ export function useDashboardCustomize() {
    * position is announced through the drag-and-drop live region, so the Move menu's status line is not repeated.
    */
   function moveTo(moduleKey: string, targetKey: string, placement: Placement): boolean {
-    if (!draft.value) return false;
-    const moved = placeNextTo(draft.value, moduleKey, targetKey, placement);
+    if (!draft.value || moduleKey === FIXED_FIRST_KEY) return false;
+    const moved = placeNextTo(draft.value, moduleKey, targetKey, placement, draft.value.some((entry) => entry.key === FIXED_FIRST_KEY) ? 1 : 0);
     if (!moved) return false;
     edit(moved.items);
     announce(t("admin.dashboard.customize.moved", { module: titleOf(moduleKey), position: num(moved.position), total: num(moved.items.length) }));
@@ -90,7 +90,7 @@ export function useDashboardCustomize() {
     if (draft.value) edit(draft.value.map((entry) => (entry.key === moduleKey ? { ...entry, fill } : entry)));
   }
   function remove(moduleKey: string) {
-    if (!draft.value) return;
+    if (!draft.value || moduleKey === FIXED_FIRST_KEY) return;
     edit(draft.value.filter((entry) => entry.key !== moduleKey));
     announcement.value = t("admin.dashboard.customize.removed", { module: titleOf(moduleKey) });
   }

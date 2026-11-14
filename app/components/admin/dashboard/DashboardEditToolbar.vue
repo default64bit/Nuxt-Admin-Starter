@@ -10,7 +10,7 @@ import type { MoveDirection } from "~~/shared/utils/sortable";
 // the grip slot (the drag grip button, set by the grid; Needs attention shows a lock instead), the Move menu, the size
 // among the module's allowed widths and the Fill toggle. A round remove button overhangs the module's top end corner
 // (left in `fa`, right in `en`).
-const props = defineProps<{ moduleTitle: string; width: DashboardWidth; widths: readonly DashboardWidth[]; fill: boolean; position: number; total: number }>();
+const props = defineProps<{ moduleTitle: string; width: DashboardWidth; widths: readonly DashboardWidth[]; fill: boolean; position: number; total: number; fixed?: boolean }>();
 const emit = defineEmits<{ move: [direction: MoveDirection]; resize: [width: DashboardWidth]; fill: [value: boolean]; remove: [] }>();
 const { t } = useI18n();
 
@@ -31,7 +31,7 @@ const fillId = useId();
   <div data-slot="dashboard-edit-toolbar" role="group" :aria-label="t('admin.dashboard.customize.toolbar', { module: moduleTitle })" class="flex flex-wrap items-center gap-2">
     <slot name="grip" />
 
-    <DropdownMenu>
+    <DropdownMenu v-if="!fixed">
       <DropdownMenuTrigger as-child>
         <Button type="button" variant="outline" size="sm" data-slot="dashboard-move-trigger" :aria-label="t('admin.dashboard.customize.moveLabel', { module: moduleTitle })">
           <IconArrowsSort class="size-4" aria-hidden="true" />
@@ -67,6 +67,7 @@ const fillId = useId();
     </span>
 
     <Button
+      v-if="!fixed"
       type="button"
       variant="secondary"
       size="icon"

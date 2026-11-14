@@ -3,7 +3,8 @@ import { toast } from "vue-sonner";
 import type { z } from "zod";
 import type { ModuleRangeKey } from "~~/shared/constants/analytics";
 import type { DashboardModuleKey } from "~~/shared/constants/dashboard-modules";
-import type { MODULE_PAYLOAD_SCHEMAS, ChartStyle, DashboardPreferences } from "~~/shared/schemas/admin-dashboard";
+import type { MODULE_PAYLOAD_SCHEMAS, ChartStyle, DashboardPreferences, NeedsAttention } from "~~/shared/schemas/admin-dashboard";
+import { ADMIN_NEEDS_ATTENTION_KEY } from "./useAdminNavCounts";
 
 /** The Dashboard's preferences: one query for the layout, ranges and Chart style. */
 export const ADMIN_DASHBOARD_KEY = ["admin", "dashboard-preferences"] as const;
@@ -35,6 +36,23 @@ export function useDashboardModule<K extends DashboardModuleKey>(moduleKey: K, r
     queryFn: () => request(`/api/v1/admin/analytics/modules/${moduleKey}`, { query: { range: range.value }, headers: { accept: "application/json" } }) as Promise<DashboardModulePayloads[K]>,
     enabled: import.meta.client,
     staleTime,
+    refetchOnWindowFocus: true,
+    refetchInterval: false,
+    retry: false,
+  });
+}
+
+/**
+ * The Needs attention rows. Never cached by the server and keyed under the nav counts, so it refetches whenever the
+ * badges do (a ticket move, a poll that saw a count change) and on focus. The grid shares this query to hide the module
+ * when no row is visible.
+ */
+export function useNeedsAttention() {
+  return useQuery({
+    queryKey: ADMIN_NEEDS_ATTENTION_KEY,
+    queryFn: () => request("/api/v1/admin/analytics/modules/needs-attention", { headers: { accept: "application/json" } }) as Promise<NeedsAttention>,
+    enabled: import.meta.client,
+    staleTime: 0,
     refetchOnWindowFocus: true,
     refetchInterval: false,
     retry: false,

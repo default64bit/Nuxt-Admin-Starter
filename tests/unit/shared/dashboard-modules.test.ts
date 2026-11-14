@@ -6,15 +6,15 @@ import { MODULE_RANGE_KEYS } from "~~/shared/constants/analytics";
 import { DASHBOARD_MODULES, DASHBOARD_MODULE_LIMIT, PREVIEW_KINDS, moduleTitleKey } from "~~/shared/constants/dashboard-modules";
 import { PERMISSION_KEYS } from "~~/shared/constants/permissions";
 import { MODULE_PAYLOAD_SCHEMAS } from "~~/shared/schemas/admin-dashboard";
+import { loadLocaleMessages } from "../support/locale-messages";
 import { MODULE_LOADERS } from "../../../server/services/admin-dashboard.service";
 
 // The Dashboard module registry's completeness test (.specs/admin-dashboard/spec.md "Modules"): every registered module has
 // every piece, so adding an entry without one fails here (the typed lookups catch the same at compile time).
 const root = join(__dirname, "../../..");
 const css = readFileSync(join(root, "app/assets/css/tailwind.css"), "utf8");
-const messages = (locale: string) => JSON.parse(readFileSync(join(root, "i18n/locales", `${locale}.json`), "utf8")) as unknown;
-const en = messages("en");
-const fa = messages("fa");
+const en = loadLocaleMessages("en");
+const fa = loadLocaleMessages("fa");
 const lookup = (tree: unknown, path: string) => path.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], tree);
 
 describe("the Dashboard module registry", () => {
@@ -22,12 +22,15 @@ describe("the Dashboard module registry", () => {
     expect(DASHBOARD_MODULE_LIMIT).toBe(DASHBOARD_MODULES.length);
     expect(new Set(DASHBOARD_MODULES.map((module) => module.key)).size).toBe(DASHBOARD_MODULES.length);
     for (const module of DASHBOARD_MODULES) {
-      expect(PERMISSION_KEYS).toContain(module.permission);
+      if (module.permission !== null) expect(PERMISSION_KEYS).toContain(module.permission);
       expect(module.widths).toContain(module.defaultWidth);
       expect(PREVIEW_KINDS).toContain(module.preview);
       for (const range of module.ranges) expect(MODULE_RANGE_KEYS).toContain(range);
       if (module.ranges.length > 0) expect(module.ranges).toContain(module.defaultRange);
     }
+    // Needs attention is the one fixed module and is first in the default order.
+    expect(DASHBOARD_MODULES.filter((module) => "fixed" in module).map((module) => module.key)).toEqual(["needs-attention"]);
+    expect(DASHBOARD_MODULES[0]!.key).toBe("needs-attention");
   });
 
   it.each(DASHBOARD_MODULES.map((module) => [module.key]))("%s has a title in both languages, a loader, a component, a payload schema and a colour variable", (key) => {

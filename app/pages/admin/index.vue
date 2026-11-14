@@ -9,8 +9,9 @@ import ChartStyleMenu from "~/components/admin/dashboard/ChartStyleMenu.vue";
 import DashboardChooseModules from "~/components/admin/dashboard/DashboardChooseModules.vue";
 import DashboardEditBar from "~/components/admin/dashboard/DashboardEditBar.vue";
 import DashboardGrid from "~/components/admin/dashboard/DashboardGrid.vue";
-import { useAdminDashboardPreferences } from "~/composables/admin/useAdminDashboard";
+import { useAdminDashboardPreferences, useNeedsAttention } from "~/composables/admin/useAdminDashboard";
 import { useDashboardCustomize } from "~/composables/admin/useDashboardCustomize";
+import { NEEDS_ATTENTION_KEY } from "~~/shared/constants/dashboard-modules";
 
 // The Dashboard (.specs/admin-dashboard/spec.md): every User sees their layout (the default until they save one) filtered
 // by what their Roles may see, or a clear message when nothing is left. The page needs no permission; the server filters every module again.
@@ -23,7 +24,12 @@ const customize = useDashboardCustomize();
 const shown = computed(() => customize.draft.value ?? saved.value);
 const choosing = ref(false);
 const chosen = computed(() => (customize.draft.value ?? []).map((entry) => entry.key));
-const hasModules = computed(() => saved.value.length > 0);
+// Needs attention hides itself when no row is visible, so a User left with only that module has an empty Dashboard.
+const attention = useNeedsAttention();
+const attentionEmpty = computed(() => attention.data.value?.rows.length === 0);
+const onlyAttention = computed(() => saved.value.length > 0 && saved.value.every((entry) => entry.key === NEEDS_ATTENTION_KEY));
+const waiting = computed(() => onlyAttention.value && attention.isPending.value);
+const hasModules = computed(() => saved.value.some((entry) => entry.key !== NEEDS_ATTENTION_KEY || !attentionEmpty.value));
 
 // A move keeps focus on the module's Move button (the list is reordered under it).
 async function move(key: string, direction: Parameters<typeof customize.move>[1]) {
@@ -72,7 +78,7 @@ onBeforeUnmount(() => window.removeEventListener("beforeunload", warn));
       <p class="text-muted-foreground text-sm">{{ t("admin.dashboard.loadFailed") }}</p>
       <Button type="button" variant="outline" size="sm" @click="query.refetch()">{{ t("admin.dashboard.retry") }}</Button>
     </div>
-    <div v-else-if="!query.data.value" data-slot="dashboard-loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
+    <div v-else-if="!query.data.value || waiting" data-slot="dashboard-loading" class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6">
       <Skeleton v-for="n in 3" :key="n" class="h-48 md:col-span-1 lg:col-span-2" />
     </div>
     <p v-else-if="!hasModules" data-slot="dashboard-no-modules" class="text-muted-foreground text-sm">{{ t("admin.dashboard.empty") }}</p>

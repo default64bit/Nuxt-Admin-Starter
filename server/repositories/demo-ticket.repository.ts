@@ -114,6 +114,22 @@ export async function countOpenTickets(db: Executor): Promise<number> {
   return row?.n ?? 0;
 }
 
+/** How many tickets are in each status now (statuses with none are absent). */
+export async function countTicketsByStatus(db: Executor): Promise<{ status: DemoTicketStatus; count: number }[]> {
+  return db.select({ status: demoTickets.status, count: sql<number>`count(*)::int` }).from(demoTickets).groupBy(demoTickets.status);
+}
+
+/** Tickets created per Tehran day in `[from, to)`; days with none are absent. */
+export async function countTicketsCreatedByDay(db: Executor, window: { from: Date; to: Date }): Promise<{ day: string; count: number }[]> {
+  const result = await db.execute<{ day: string; n: string }>(sql`
+    SELECT (created_at AT TIME ZONE 'Asia/Tehran')::date::text AS day, count(*) AS n
+    FROM demo_tickets
+    WHERE created_at >= ${window.from.toISOString()}::timestamptz AND created_at < ${window.to.toISOString()}::timestamptz
+    GROUP BY 1 ORDER BY 1
+  `);
+  return result.rows.map((row) => ({ day: row.day, count: Number(row.n) }));
+}
+
 /** Writes the changed columns and moves the version (returned); a status change also moves `statusSince`. */
 export async function updateTicket(
   tx: Executor,

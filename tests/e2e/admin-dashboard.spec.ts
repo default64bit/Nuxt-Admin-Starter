@@ -1,6 +1,11 @@
 import dotenv from "dotenv";
 import { createAdminAccount, type AdminAccount } from "./support/admin-session";
 import { expectNoAxeViolations } from "./support/axe";
+// demo-ticket:start
+import { randomUUID } from "node:crypto";
+import pg from "pg";
+import { removeDemoTickets, seedDemoTickets } from "./support/demo-ticket-seed";
+// demo-ticket:end
 import { gotoHydrated } from "./support/page";
 import { expect, test } from "./support/test";
 
@@ -13,12 +18,26 @@ test.describe.configure({ mode: "serial" });
 
 let viewer: AdminAccount;
 let nobody: AdminAccount;
+// demo-ticket:start
+let staff: AdminAccount;
+const tag = `dash-${randomUUID().slice(0, 8)}`;
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+// demo-ticket:end
 test.beforeAll(async () => {
   viewer = await createAdminAccount("+989125550601", { permissions: ["view-users"] });
   nobody = await createAdminAccount("+989125550602", { permissions: ["view-roles"] });
+  // demo-ticket:start
+  staff = await createAdminAccount("+989125550603", { permissions: ["view-demo-tickets"] });
+  const staffId = String((await pool.query("SELECT id FROM users WHERE phone_e164 = '+989125550603'")).rows[0].id);
+  await seedDemoTickets(pool, { tag, userId: staffId, filler: 2 });
+  // demo-ticket:end
 });
 test.afterAll(async () => {
-  for (const account of [viewer, nobody]) await account?.cleanup();
+  // demo-ticket:start
+  await removeDemoTickets(pool, tag);
+  await pool.end();
+  // demo-ticket:end
+  for (const account of [viewer, nobody, staff]) await account?.cleanup();
 });
 
 const card = (page: import("@playwright/test").Page) => page.locator('[data-dashboard-module="new-accounts"]');
@@ -51,9 +70,11 @@ test("Customize: remove, choose with a sample preview, add, and Save keeps the l
   await page.locator('[data-slot="dashboard-choose-modules"]').click();
   const dialog = page.locator('[data-slot="dashboard-choose-dialog"]');
   await expect(dialog.locator('[data-slot="module-sample"][data-sample-kind="sparkline"]')).toBeVisible();
-  await expect(dialog.locator('[data-slot="dashboard-choose-count"]')).toContainText("0 of 1");
-  await dialog.locator('[data-slot="dashboard-choose-checkbox"]').click();
-  await expect(dialog.locator('[data-slot="dashboard-choose-count"]')).toContainText("1 of 1");
+  await expect(dialog.locator('[data-slot="dashboard-choose-count"]')).toContainText("1 of 2");
+  // Needs attention is always chosen and cannot be unticked.
+  await expect(dialog.locator('[data-module="needs-attention"] [data-slot="dashboard-choose-checkbox"]')).toBeDisabled();
+  await dialog.locator('[data-module="new-accounts"] [data-slot="dashboard-choose-checkbox"]').click();
+  await expect(dialog.locator('[data-slot="dashboard-choose-count"]')).toContainText("2 of 2");
   await dialog.locator('[data-slot="dashboard-choose-done"]').click();
   await expect(card(page)).toBeVisible();
 
@@ -107,3 +128,48 @@ for (const [prefix, dir, name] of [
     await expectNoAxeViolations(page);
   });
 }
+
+// demo-ticket:start
+// Needs attention and the demo modules. A User who may open Demo tickets sees one row whose count is the menu badge's;
+// the per-day chart is drawn in each Chart style (soft, glow, pro) once scrolled into view, in both directions.
+test("Needs attention shows the Open demo tickets row with the badge's count, and hides without one", async ({ page }) => {
+  await staff.signIn(page);
+  await gotoHydrated(page, "/en/admin");
+  const attention = page.locator('[data-dashboard-module="needs-attention"]');
+  await expect(attention.locator('[data-slot="needs-attention-row"]')).toHaveCount(1);
+  const badge = (await page.locator('[data-slot="nav-badge"][data-count-key="openDemoTickets"]').first().textContent())?.trim();
+  await expect(attention.locator('[data-row="openDemoTickets"] [data-slot="needs-attention-count"]')).toHaveText(badge!);
+
+  // Fixed: Customize offers a lock, no Move menu and no remove button.
+  await page.locator('[data-slot="dashboard-customize"]').click();
+  await expect(page.locator('[data-module="needs-attention"] [data-slot="dashboard-lock"]')).toBeVisible();
+  await expect(page.locator('[data-module="needs-attention"] [data-slot="dashboard-move-trigger"]')).toHaveCount(0);
+  await expect(page.locator('[data-module="needs-attention"] [data-slot="dashboard-remove"]')).toHaveCount(0);
+
+  await page.context().clearCookies();
+  await viewer.signIn(page);
+  await gotoHydrated(page, "/en/admin");
+  await expect(card(page)).toBeVisible();
+  await expect(page.locator('[data-module="needs-attention"]')).toHaveCount(0);
+});
+
+for (const style of ["soft", "glow", "pro"] as const) {
+  test(`the per-day chart in the ${style} Chart style, EN and FA, passes axe`, async ({ page }) => {
+    await staff.signIn(page);
+    await gotoHydrated(page, "/en/admin");
+    await page.locator('[data-slot="chart-style-trigger"]').click();
+    await page.locator(`[data-chart-style-option="${style}"]`).click();
+    const perDay = page.locator('[data-dashboard-module="demo-tickets-per-day"]');
+    await perDay.scrollIntoViewIfNeeded();
+    await expect(perDay.locator(`[data-slot="demo-ticket-trend-chart"][data-chart-style="${style}"] canvas`)).toBeVisible();
+    await expect(page.locator('[data-dashboard-module="demo-tickets-by-status"] [data-slot="demo-ticket-status-row"]')).toHaveCount(4);
+    await expectNoAxeViolations(page);
+
+    await gotoHydrated(page, "/admin");
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+    await page.locator('[data-dashboard-module="demo-tickets-per-day"]').scrollIntoViewIfNeeded();
+    await expect(page.locator(`[data-slot="demo-ticket-trend-chart"][data-chart-style="${style}"] canvas`)).toBeVisible();
+    await expectNoAxeViolations(page);
+  });
+}
+// demo-ticket:end

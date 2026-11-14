@@ -1,4 +1,4 @@
-import { DASHBOARD_MODULES, DASHBOARD_MODULE_LIMIT, DASHBOARD_WIDTHS, dashboardModule, type DashboardWidth } from "../constants/dashboard-modules";
+import { DASHBOARD_MODULES, DASHBOARD_MODULE_LIMIT, DASHBOARD_WIDTHS, FIXED_FIRST_KEY, dashboardModule, type DashboardWidth } from "../constants/dashboard-modules";
 import type { PermissionKey } from "../constants/permissions";
 import { moveItem, type MoveDirection } from "./sortable";
 
@@ -14,7 +14,17 @@ export type HasPermission = (key: PermissionKey) => boolean;
 /** A module is visible to a User who holds its one Permission. */
 export function isModuleVisible(key: string, has: HasPermission): boolean {
   const definition = dashboardModule(key);
-  return definition !== undefined && has(definition.permission);
+  return definition !== undefined && (definition.permission === null || has(definition.permission));
+}
+
+/**
+ * The fixed module (Needs attention) always sits first and is always present: it moves to the front, or is added with
+ * its default width, so a saved or submitted list can never remove or move it.
+ */
+export function withFixedFirst(entries: readonly DashboardLayoutEntry[]): DashboardLayoutEntry[] {
+  if (FIXED_FIRST_KEY === null) return [...entries];
+  const fixed = entries.find((entry) => entry.key === FIXED_FIRST_KEY) ?? { key: FIXED_FIRST_KEY, width: dashboardModule(FIXED_FIRST_KEY)!.defaultWidth, fill: false };
+  return [fixed, ...entries.filter((entry) => entry.key !== FIXED_FIRST_KEY)];
 }
 
 /** The computed default layout (registry order, default widths, Fill off). Hidden modules are not skipped here; use `visibleEntries`. */
@@ -45,7 +55,7 @@ export function repairLayout(stored: unknown): DashboardLayoutEntry[] {
     seen.add(definition.key);
     repaired.push({ key: definition.key, width: isWidth(entry.width) && definition.widths.includes(entry.width) ? entry.width : definition.defaultWidth, fill: entry.fill === true });
   }
-  return repaired.slice(0, DASHBOARD_MODULE_LIMIT);
+  return withFixedFirst(repaired).slice(0, DASHBOARD_MODULE_LIMIT);
 }
 
 // --- Customize: strict save, hidden modules, Fill packing and the draft operations -------------------------------
@@ -56,7 +66,7 @@ export type LayoutCheck = { ok: true; entries: DashboardLayoutEntry[] } | { ok: 
 /**
  * The strict save-time check. Rejects an unknown key, a duplicate, a width the module does not allow, an entry with
  * any other field (a range on an entry: the draft never carries ranges) and more entries than the registry holds.
- * A module whose Permission was just removed is not rejected.
+ * A module whose Permission was just removed is not rejected. The fixed module is put first (or added) rather than rejected.
  */
 export function validateArrangement(raw: unknown): LayoutCheck {
   if (!Array.isArray(raw)) return { ok: false, reason: "not_a_list" };
@@ -75,7 +85,7 @@ export function validateArrangement(raw: unknown): LayoutCheck {
     if (typeof entry.fill !== "boolean") return { ok: false, reason: "bad_entry" };
     entries.push({ key: definition.key, width: entry.width, fill: entry.fill });
   }
-  return { ok: true, entries };
+  return { ok: true, entries: withFixedFirst(entries) };
 }
 
 /**
@@ -123,10 +133,19 @@ export function layoutSpans(entries: readonly Pick<DashboardLayoutEntry, "width"
   return spans;
 }
 
-/** Moves one entry. Returns null when the move changes nothing, otherwise the new list and the entry's new 1-based position. */
+/**
+ * Moves one entry among the movable ones (the fixed module stays first and never moves). Returns null when the move
+ * changes nothing, otherwise the new list and the entry's new 1-based position.
+ */
 export function moveEntry(entries: readonly DashboardLayoutEntry[], key: string, direction: MoveDirection): { entries: DashboardLayoutEntry[]; position: number } | null {
-  const moved = moveItem(entries, key, direction);
-  return moved ? { entries: moved.items, position: moved.position } : null;
+  if (key === FIXED_FIRST_KEY) return null;
+  const head = entries.filter((entry) => entry.key === FIXED_FIRST_KEY);
+  const moved = moveItem(
+    entries.filter((entry) => entry.key !== FIXED_FIRST_KEY),
+    key,
+    direction,
+  );
+  return moved ? { entries: [...head, ...moved.items], position: moved.position + head.length } : null;
 }
 
 /** Whether two layouts are the same arrangement (key order, width and Fill). */

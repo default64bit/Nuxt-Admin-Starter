@@ -1,5 +1,8 @@
 import { z } from "zod";
 import { MODULE_RANGE_KEYS } from "../constants/analytics";
+// demo-ticket:start
+import { DEMO_TICKET_STATUSES } from "../constants/demo-ticket";
+// demo-ticket:end
 import { DASHBOARD_WIDTHS, type DashboardModuleKey } from "../constants/dashboard-modules";
 
 export const CHART_STYLES = ["soft", "glow", "pro"] as const;
@@ -36,10 +39,37 @@ export const newAccountsSchema = periodSchema.extend({
 export type NewAccounts = z.output<typeof newAccountsSchema>;
 
 /**
+ * `GET .../modules/needs-attention`: one row per queue the User may open (its nav-count key and the count the menu badge
+ * shows). Empty when the User may open no queue, which hides the module.
+ */
+export const needsAttentionSchema = z.object({ rows: z.array(z.object({ key: z.string(), count: z.number().int().min(0) })).max(20) });
+export type NeedsAttention = z.output<typeof needsAttentionSchema>;
+
+// demo-ticket:start
+/** `GET .../modules/demo-tickets-by-status`: how many demo tickets are in each status now (the whole pipeline, in order). */
+export const demoTicketsByStatusSchema = z.object({
+  statuses: z.array(z.object({ status: z.enum(DEMO_TICKET_STATUSES), count: z.number().int().min(0) })).max(DEMO_TICKET_STATUSES.length),
+});
+export type DemoTicketsByStatus = z.output<typeof demoTicketsByStatusSchema>;
+
+/** `GET .../modules/demo-tickets-per-day?range=`: demo tickets created on each Tehran day of the range (zero days included). */
+export const demoTicketsPerDaySchema = periodSchema.extend({
+  total: z.number().int().min(0),
+  days: z.array(z.object({ day: z.string(), count: z.number().int().min(0) })).max(62),
+});
+export type DemoTicketsPerDay = z.output<typeof demoTicketsPerDaySchema>;
+// demo-ticket:end
+
+/**
  * The payload schema of every module, keyed by module key. A lookup typed by the registry, so registering a module
  * without its schema is a type error. The loader parses its answer with it.
  */
 export const MODULE_PAYLOAD_SCHEMAS = {
+  "needs-attention": needsAttentionSchema,
+  // demo-ticket:start
+  "demo-tickets-by-status": demoTicketsByStatusSchema,
+  "demo-tickets-per-day": demoTicketsPerDaySchema,
+  // demo-ticket:end
   "new-accounts": newAccountsSchema,
 } as const satisfies Record<DashboardModuleKey, z.ZodType>;
 

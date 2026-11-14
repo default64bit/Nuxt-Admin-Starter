@@ -1,8 +1,12 @@
 {
   "admin": {
     "nav": {
-      "groups": { "work": "کار" },
-      "items": { "demoTickets": "تیکت‌های نمونه" }
+      "groups": {
+        "work": "کار"
+      },
+      "items": {
+        "demoTickets": "تیکت‌های نمونه"
+      }
     },
     "permissions": {
       "groups": {
@@ -23,7 +27,9 @@
       }
     },
     "auditLog": {
-      "groups": { "demoTickets": "تیکت‌های نمونه" },
+      "groups": {
+        "demoTickets": "تیکت‌های نمونه"
+      },
       "actions": {
         "demoTicketCreated": "تیکت نمونه ساخته شد",
         "demoTicketUpdated": "تیکت نمونه ویرایش شد",
@@ -143,6 +149,25 @@
         "invalidTransition": "تیکت فقط به وضعیت بعدی می‌رود. دوباره بارگیری شد.",
         "gone": "این تیکت نمونه دیگر وجود ندارد.",
         "failed": "مشکلی پیش آمد. لطفاً دوباره تلاش کنید."
+      }
+    },
+    "dashboard": {
+      "modules": {
+        "demoTicketsByStatus": "تیکت‌های نمونه بر اساس وضعیت",
+        "demoTicketsPerDay": "تیکت‌های نمونهٔ ایجادشده در هر روز"
+      },
+      "needsAttention": {
+        "rows": {
+          "openDemoTickets": "تیکت‌های نمونهٔ باز"
+        }
+      },
+      "demoTickets": {
+        "openTickets": "باز کردن تیکت‌های نمونه",
+        "created": "ایجادشده",
+        "day": "روز",
+        "viewAsChart": "نمایش نمودار",
+        "viewAsTable": "نمایش جدول",
+        "perDaySummary": "تیکت‌های نمونهٔ ایجادشده در هر روز طی {days} روز: در مجموع {total}"
       }
     }
   }

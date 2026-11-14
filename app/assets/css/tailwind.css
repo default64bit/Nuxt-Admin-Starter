@@ -373,8 +373,24 @@ html.dark {
  * No inline styles.
  */
 :root {
+  --dashboard-hue-needs-attention: 24;
   --dashboard-hue-new-accounts: 100;
+  /* demo-ticket:start */
+  --dashboard-hue-demo-tickets-by-status: 215;
+  --dashboard-hue-demo-tickets-per-day: 190;
+  /* demo-ticket:end */
 }
+[data-dashboard-module="needs-attention"] {
+  --dashboard-hue: var(--dashboard-hue-needs-attention);
+}
+/* demo-ticket:start */
+[data-dashboard-module="demo-tickets-by-status"] {
+  --dashboard-hue: var(--dashboard-hue-demo-tickets-by-status);
+}
+[data-dashboard-module="demo-tickets-per-day"] {
+  --dashboard-hue: var(--dashboard-hue-demo-tickets-per-day);
+}
+/* demo-ticket:end */
 [data-dashboard-module="new-accounts"],
 [data-admin-strip="users"] {
   --dashboard-hue: var(--dashboard-hue-new-accounts);

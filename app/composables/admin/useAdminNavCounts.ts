@@ -5,6 +5,11 @@ import { parseApiError } from "~~/shared/utils/api-error-client";
 import { diffNavCounts, navPollDelay, NAV_POLL_MS, type NavCountsChange, type NavQueueCountKey } from "~~/shared/utils/admin-live-inbox";
 
 export const ADMIN_NAV_COUNTS_KEY = ["admin", "nav-counts"] as const;
+/**
+ * The Dashboard's Needs attention rows. A child of the nav-counts key, so anything that invalidates the badges
+ * (`useInvalidateNavCounts`) invalidates the module too, and a poll that sees a queue count change refetches it.
+ */
+export const ADMIN_NEEDS_ATTENTION_KEY = [...ADMIN_NAV_COUNTS_KEY, "needs-attention"] as const;
 /** How long a count is fresh: focus and navigation refetch only after this. */
 export const NAV_COUNTS_STALE_MS = 30_000;
 export { NAV_POLL_MS };
@@ -46,6 +51,7 @@ export function refreshForNavCountsChange(queryClient: QueryClient, change: NavC
   const keys: (readonly string[])[] = [];
   if (change.newestMoved || change.unreadChanged) keys.push(LIVE_INBOX_KEY);
   for (const queue of change.changedQueues) keys.push(LIVE_QUEUE_LIST_KEYS[queue]);
+  if (change.changedQueues.length > 0) keys.push(ADMIN_NEEDS_ATTENTION_KEY);
   for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
 }
 

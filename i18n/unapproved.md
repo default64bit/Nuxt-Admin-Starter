@@ -55,6 +55,13 @@ key from this list when it is approved.
 - every key in `i18n/locales/demo-ticket.fa.json`
 <!-- demo-ticket:end -->
 
+## Dashboard modules
+
+- `admin.dashboard.modules.needsAttention`, `admin.dashboard.needsAttention.caughtUp`, `admin.dashboard.customize.locked` and `admin.dashboard.customize.choose.fixed`
+<!-- demo-ticket:start -->
+- the Dashboard keys in `i18n/locales/demo-ticket.fa.json` (`modules.demoTickets*`, `needsAttention.rows.openDemoTickets`, `demoTickets.*`)
+<!-- demo-ticket:end -->
+
 ## Notifications and Inbox
 
 - every key under `admin.notifications` and `admin.account.notifications`

@@ -1,8 +1,12 @@
 {
   "admin": {
     "nav": {
-      "groups": { "work": "Work" },
-      "items": { "demoTickets": "Demo tickets" }
+      "groups": {
+        "work": "Work"
+      },
+      "items": {
+        "demoTickets": "Demo tickets"
+      }
     },
     "permissions": {
       "groups": {
@@ -23,7 +27,9 @@
       }
     },
     "auditLog": {
-      "groups": { "demoTickets": "Demo tickets" },
+      "groups": {
+        "demoTickets": "Demo tickets"
+      },
       "actions": {
         "demoTicketCreated": "Demo ticket created",
         "demoTicketUpdated": "Demo ticket updated",
@@ -143,6 +149,25 @@
         "invalidTransition": "A ticket can only move to the next status. It was reloaded.",
         "gone": "This demo ticket no longer exists.",
         "failed": "Something went wrong. Please try again."
+      }
+    },
+    "dashboard": {
+      "modules": {
+        "demoTicketsByStatus": "Demo tickets by status",
+        "demoTicketsPerDay": "Demo tickets created per day"
+      },
+      "needsAttention": {
+        "rows": {
+          "openDemoTickets": "Open demo tickets"
+        }
+      },
+      "demoTickets": {
+        "openTickets": "Open demo tickets",
+        "created": "Created",
+        "day": "Day",
+        "viewAsChart": "View as chart",
+        "viewAsTable": "View as table",
+        "perDaySummary": "Demo tickets created per day over {days} days: {total} in all"
       }
     }
   }

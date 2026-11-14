@@ -5,14 +5,23 @@ import type { z } from "zod";
 import * as schema from "../database/schema";
 import type { Db } from "../database/types";
 import { MODULE_RANGE_KEYS, type ModuleRangeKey } from "../../shared/constants/analytics";
+// demo-ticket:start
+import { DEMO_TICKET_STATUSES } from "../../shared/constants/demo-ticket";
+import { DEMO_TICKETS_PER_DAY_KEY } from "../../shared/constants/dashboard-modules";
+// demo-ticket:end
+import { NAV_QUEUE_COUNT_KEYS } from "../../shared/utils/admin-live-inbox";
 import { DASHBOARD_MODULES, NEW_ACCOUNTS_KEY, dashboardModule, type DashboardModuleDefinition, type DashboardModuleKey } from "../../shared/constants/dashboard-modules";
 import { CHART_STYLES, MODULE_PAYLOAD_SCHEMAS, type ChartStyle, type DashboardPreferences } from "../../shared/schemas/admin-dashboard";
 import { dayIso, dayNumber, resolveRange, startOfDay } from "../../shared/utils/business-calendar";
 import { defaultLayout, isModuleVisible, mergeHiddenEntries, repairLayout, validateArrangement, visibleEntries } from "../../shared/utils/dashboard-layout";
 import { accountsCreatedByDay, countAccounts, countAccountsCreated } from "../repositories/account-analytics.repository";
 import { findPreferences, saveArrangement, upsertChartStyle, upsertRange } from "../repositories/dashboard-preferences.repository";
+// demo-ticket:start
+import { countTicketsByStatus, countTicketsCreatedByDay } from "../repositories/demo-ticket.repository";
+// demo-ticket:end
 import { analyticsCache, analyticsTtl, type AnalyticsCache } from "../utils/analytics-cache";
 import { DomainError } from "../utils/domain-errors";
+import { getQueueCounts } from "./admin-nav-counts.service";
 import type { AdminActor } from "./authorization";
 
 const isRange = (value: unknown): value is ModuleRangeKey => typeof value === "string" && (MODULE_RANGE_KEYS as readonly string[]).includes(value);
@@ -97,6 +106,8 @@ interface ModuleDeps {
   db: Db;
   cache?: AnalyticsCache;
   now?: () => Date;
+  /** The signed-in User asking; a loader that depends on who asks (Needs attention) reads it. */
+  actor: AdminActor;
 }
 
 /** The range a period module reads: the User's choice when the module offers it, else its default, with the window it resolves to. */
@@ -136,6 +147,37 @@ async function loadNewAccounts({ db, cache = analyticsCache, now = () => new Dat
   return { ...common, ...period, totalAccounts: total };
 }
 
+/**
+ * Needs attention: one row per queue the User may open, counted by the menu badges' own function (so a row equals its
+ * badge). Never cached: it is read live on every request.
+ */
+async function loadNeedsAttention({ db, actor }: ModuleDeps) {
+  const counts = await getQueueCounts({ db }, actor);
+  return { rows: NAV_QUEUE_COUNT_KEYS.filter((key) => counts[key] !== undefined).map((key) => ({ key, count: counts[key]! })) };
+}
+
+// demo-ticket:start
+/** Demo tickets by status: the whole pipeline in order, with zero for a status nobody is in. Live, never cached. */
+async function loadDemoTicketsByStatus({ db }: ModuleDeps) {
+  const counts = new Map((await withAnalyticsTimeout(db, (tx) => countTicketsByStatus(tx))).map((row) => [row.status, row.count]));
+  return { statuses: DEMO_TICKET_STATUSES.map((status) => ({ status, count: counts.get(status) ?? 0 })) };
+}
+
+/** Demo tickets created per day: one bucket per Tehran day of the range, zero days included. */
+async function loadDemoTicketsPerDay({ db, cache = analyticsCache, now = () => new Date() }: ModuleDeps, rangeParam: unknown) {
+  const { resolved, common, cacheKey } = resolveModuleRange(DEMO_TICKETS_PER_DAY_KEY, rangeParam, now());
+  const period = await cache.remember(cacheKey, analyticsTtl(resolved.includesToday), async () => {
+    const first = dayNumber(resolved.firstDay);
+    const last = dayNumber(resolved.lastDay);
+    const byDay = await withAnalyticsTimeout(db, (tx) => countTicketsCreatedByDay(tx, resolved.window));
+    const counts = new Map(byDay.map((entry) => [entry.day, entry.count]));
+    const days = Array.from({ length: last - first + 1 }, (_, i) => ({ day: dayIso(first + i), count: counts.get(dayIso(first + i)) ?? 0 }));
+    return { total: days.reduce((sum, entry) => sum + entry.count, 0), days };
+  });
+  return { ...common, ...period };
+}
+// demo-ticket:end
+
 type ModuleLoader = (deps: ModuleDeps, rangeParam: unknown) => Promise<unknown>;
 
 /**
@@ -144,6 +186,11 @@ type ModuleLoader = (deps: ModuleDeps, rangeParam: unknown) => Promise<unknown>;
  * can be cached does so through `deps.cache`, keyed by module + range + window.
  */
 export const MODULE_LOADERS = {
+  "needs-attention": loadNeedsAttention,
+  // demo-ticket:start
+  "demo-tickets-by-status": loadDemoTicketsByStatus,
+  "demo-tickets-per-day": loadDemoTicketsPerDay,
+  // demo-ticket:end
   "new-accounts": loadNewAccounts,
 } as const satisfies Record<DashboardModuleKey, ModuleLoader>;
 
@@ -152,13 +199,13 @@ export const MODULE_LOADERS = {
  * `403` without the module's Permission (checked before the cache is read), otherwise the loader's answer parsed by the
  * module's payload schema.
  */
-export async function loadDashboardModule(deps: ModuleDeps, actor: AdminActor, moduleKey: string, rangeParam: unknown): Promise<unknown> {
+export async function loadDashboardModule(deps: Omit<ModuleDeps, "actor">, actor: AdminActor, moduleKey: string, rangeParam: unknown): Promise<unknown> {
   const definition = dashboardModule(moduleKey);
   if (!definition) throw new DomainError(404, "Not Found", "not_found");
   if (!isModuleVisible(definition.key, actor.has)) throw new DomainError(403, "Forbidden", "forbidden");
   const key = definition.key as DashboardModuleKey;
   const payload: z.ZodType = MODULE_PAYLOAD_SCHEMAS[key];
-  return payload.parse(await MODULE_LOADERS[key](deps, rangeParam));
+  return payload.parse(await MODULE_LOADERS[key]({ ...deps, actor }, rangeParam));
 }
 
 /**

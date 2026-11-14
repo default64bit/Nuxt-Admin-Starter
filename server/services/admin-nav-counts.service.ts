@@ -12,9 +12,18 @@ import { countOpenTickets } from "../repositories/demo-ticket.repository";
  * schema and its `countKey` on the nav item.
  */
 export async function getNavCounts({ db }: { db: Db }, actor: AdminActor): Promise<AdminNavCounts> {
-  const counts: AdminNavCounts = { inboxUnread: await countInboxUnread({ db }, actor), newest: await newestInboxItem({ db }, actor) };
+  const counts: AdminNavCounts = { inboxUnread: await countInboxUnread({ db }, actor), newest: await newestInboxItem({ db }, actor), ...(await getQueueCounts({ db }, actor)) };
+  return adminNavCountsSchema.parse(counts);
+}
+
+/**
+ * The queue counts the actor may see (the menu badges). The Dashboard's Needs attention module counts its rows with this
+ * same function, so a row and its badge always agree.
+ */
+export async function getQueueCounts({ db }: { db: Db }, actor: AdminActor): Promise<Partial<AdminNavCounts>> {
+  const counts: Partial<AdminNavCounts> = {};
   // demo-ticket:start
   if (actor.has("view-demo-tickets")) counts.openDemoTickets = await countOpenTickets(db);
   // demo-ticket:end
-  return adminNavCountsSchema.parse(counts);
+  return counts;
 }

@@ -96,6 +96,10 @@ test:
 build:
     corepack pnpm build
 
+# The chart chunk budget (ADR-0025): run after `just build`. Exits 2 when there is no build output.
+perf-chart-chunk:
+    corepack pnpm perf:chart-chunk
+
 # Smoke check of a running app: liveness, readiness, the landing page and the sign-in page. Needs only curl.
 smoke base_url="http://127.0.0.1:3000":
     bash scripts/ops/smoke-check.sh {{base_url}}

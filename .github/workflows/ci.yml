@@ -41,6 +41,7 @@ jobs:
       - run: just typecheck
       - run: just test
       - run: just build
+      - run: just perf-chart-chunk
 
   integration:
     name: Postgres-backed integration tests

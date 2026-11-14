@@ -592,8 +592,10 @@
           "description": "Tick the modules to show on your Dashboard. The previews use sample data, never real data.",
           "sample": "Sample",
           "count": "{n} of {total} modules chosen",
-          "done": "Done"
-        }
+          "done": "Done",
+          "fixed": "Always shown"
+        },
+        "locked": "{module} is always first and cannot be moved or removed"
       },
       "newAccounts": {
         "newAccounts": "New accounts",
@@ -602,7 +604,8 @@
         "openUsers": "Open users"
       },
       "modules": {
-        "newAccounts": "New accounts"
+        "newAccounts": "New accounts",
+        "needsAttention": "Needs attention"
       },
       "figure": {
         "new": "New",
@@ -621,6 +624,9 @@
         "stage": "Stage {n}",
         "figure": "Figure",
         "rate": "Rate {n}"
+      },
+      "needsAttention": {
+        "caughtUp": "All caught up"
       }
     },
     "notifications": {

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { useChartStyle } from "~/composables/admin/useChartStyle";
-import { dashboardModule, moduleTitleKey, type DashboardWidth, type DashboardModuleKey } from "~~/shared/constants/dashboard-modules";
+import { dashboardModule, moduleTitleKey, NEEDS_ATTENTION_KEY, type DashboardWidth, type DashboardModuleKey } from "~~/shared/constants/dashboard-modules";
 import { layoutSpans, type DashboardLayoutEntry } from "~~/shared/utils/dashboard-layout";
-import { IconGripVertical } from "@tabler/icons-vue";
+import { IconGripVertical, IconLock } from "@tabler/icons-vue";
+import { useNeedsAttention } from "~/composables/admin/useAdminDashboard";
 import type { MoveDirection, Placement } from "~~/shared/utils/sortable";
 import { useSortableMonitor } from "~/composables/admin/useSortableItem";
 import DashboardEditToolbar from "./DashboardEditToolbar.vue";
@@ -15,6 +16,12 @@ import { MODULE_COMPONENTS } from "./module-components";
 // server-rendered `style` attributes. The component of a module comes from the typed `MODULE_COMPONENTS` lookup. In Customize mode every module is
 // outlined with its content dimmed (desaturated: lowering opacity would break text contrast) and an edit toolbar above its title; the grid only reports what the admin asks for.
 const props = defineProps<{ modules: readonly DashboardLayoutEntry[]; editing?: boolean }>();
+// Needs attention hides itself when no row is visible to the User (it shares the module's query, so there is one request).
+const attention = useNeedsAttention();
+const attentionEmpty = computed(() => attention.data.value !== undefined && attention.data.value.rows.length === 0);
+const shown = computed(() => props.modules.filter((entry) => !(entry.key === NEEDS_ATTENTION_KEY && attentionEmpty.value)));
+// Movable modules are numbered without the fixed one, so the Move menu's first and last places are the real ones.
+const fixedCount = computed(() => shown.value.filter((entry) => dashboardModule(entry.key)?.fixed).length);
 const emit = defineEmits<{ move: [key: string, direction: MoveDirection]; resize: [key: string, width: DashboardWidth]; fill: [key: string, value: boolean]; remove: [key: string]; reorder: [key: string, targetKey: string, placement: Placement] }>();
 useSortableMonitor((key, targetKey, placement) => emit("reorder", key, targetKey, placement), () => props.editing === true);
 const { t } = useI18n();
@@ -24,9 +31,9 @@ const chartStyle = useChartStyle();
 const MD_SPAN: Record<number, string> = { 1: "md:col-span-1", 2: "md:col-span-2" };
 const LG_SPAN: Record<number, string> = { 1: "lg:col-span-1", 2: "lg:col-span-2", 3: "lg:col-span-3", 4: "lg:col-span-4", 5: "lg:col-span-5", 6: "lg:col-span-6" };
 const classes = computed(() => {
-  const tablet = layoutSpans(props.modules, 2);
-  const desktop = layoutSpans(props.modules, 6);
-  return props.modules.map((_, index) => `${MD_SPAN[tablet[index]!]} ${LG_SPAN[desktop[index]!]}`);
+  const tablet = layoutSpans(shown.value, 2);
+  const desktop = layoutSpans(shown.value, 6);
+  return shown.value.map((_, index) => `${MD_SPAN[tablet[index]!]} ${LG_SPAN[desktop[index]!]}`);
 });
 const widthsOf = (key: string) => dashboardModule(key)?.widths ?? [];
 
@@ -63,10 +70,10 @@ watch(() => props.modules.map((entry) => entry.key).join(), async () => {
     class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6"
   >
     <DashboardSortableItem
-      v-for="(entry, index) in modules"
+      v-for="(entry, index) in shown"
       :key="entry.key"
       :item-key="entry.key"
-      :enabled="editing === true"
+      :enabled="editing === true && !dashboardModule(entry.key)?.fixed"
       :data-module="entry.key"
       :data-width="entry.width"
       :data-fill="entry.fill || undefined"
@@ -78,15 +85,20 @@ watch(() => props.modules.map((entry) => entry.key).join(), async () => {
         :width="entry.width"
         :widths="widthsOf(entry.key)"
         :fill="entry.fill"
-        :position="index + 1"
-        :total="modules.length"
+        :fixed="dashboardModule(entry.key)?.fixed === true"
+        :position="index + 1 - fixedCount"
+        :total="shown.length - fixedCount"
         @move="(direction) => emit('move', entry.key, direction)"
         @resize="(width) => emit('resize', entry.key, width)"
         @fill="(value) => emit('fill', entry.key, value)"
         @remove="emit('remove', entry.key)"
       >
         <template #grip>
+          <span v-if="dashboardModule(entry.key)?.fixed" data-slot="dashboard-lock" role="img" :aria-label="t('admin.dashboard.customize.locked', { module: t(moduleTitleKey(entry.key)) })" class="text-muted-foreground inline-flex size-8 items-center justify-center">
+            <IconLock class="size-4" aria-hidden="true" />
+          </span>
           <button
+            v-else
             type="button"
             data-slot="dashboard-grip"
             :aria-label="t('admin.dashboard.customize.grip', { module: t(moduleTitleKey(entry.key)) })"

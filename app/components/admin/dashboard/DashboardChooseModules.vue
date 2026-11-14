@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAdminFormat } from "~/composables/admin/useAdminFormat";
-import { moduleTitleKey } from "~~/shared/constants/dashboard-modules";
+import { dashboardModule, moduleTitleKey } from "~~/shared/constants/dashboard-modules";
 import ModuleSamplePreview from "./ModuleSamplePreview.vue";
 
 // Choose modules (admin-dashboard spec "Choose modules"): one preview card per module the admin may see, each with a
@@ -29,12 +29,13 @@ const toggle = (key: string, value: boolean | "indeterminate") => (value === tru
             <Checkbox
               :id="`choose-${key}`"
               :model-value="chosen.includes(key)"
-             
+              :disabled="dashboardModule(key)?.fixed === true"
               :aria-label="t(moduleTitleKey(key))"
               data-slot="dashboard-choose-checkbox"
               @update:model-value="toggle(key, $event)"
             />
             <label :for="`choose-${key}`" class="min-w-0 flex-1 truncate text-sm font-medium">{{ t(moduleTitleKey(key)) }}</label>
+            <span v-if="dashboardModule(key)?.fixed" data-slot="dashboard-choose-fixed" class="text-muted-foreground text-xs">{{ t("admin.dashboard.customize.choose.fixed") }}</span>
             <span data-slot="dashboard-choose-sample" class="text-muted-foreground rounded border px-1.5 py-0.5 text-xs">{{ t("admin.dashboard.customize.choose.sample") }}</span>
           </div>
           <ModuleSamplePreview :module-key="key" />
