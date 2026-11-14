@@ -1,4 +1,6 @@
+// demo-ticket:start
 import { IconTicket } from "@tabler/icons-vue";
+// demo-ticket:end
 import type { Component } from "vue";
 import type { AttentionType } from "~~/shared/constants/notification-catalog";
 

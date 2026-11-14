@@ -53,10 +53,14 @@ Issues and PRs may describe behavior in neutral terms. Before pushing, check tha
 
 These exist only in the Starter and are removed by `just first-run`:
 
-- This document, `CHANGELOG.md`, the `.starter-release` file and `scripts/starter/` (the release check script).
+- This document, `CHANGELOG.md` and `scripts/starter/` (the release check script and `first-run`). The `.starter-release` file stays: in a Project it is the record of the Starter release it has ported up to, starting at the release the Project was created from.
 - The AGENTS.md section "Working on the Starter itself" and the CONTEXT.md section "Starter and projects".
 - The README, replaced by a short Project stub. `LICENSE` is untouched.
-- Starter-only tests, all in `tests/starter/` (marker, rename, strip, `demo-remove` and `.starter-release` fixtures) and the Starter-only CI jobs: `first-run`, which runs `just first-run` with the demo removed and everything Off and then typecheck, lint, unit tests, build and integration tests; and `release-check` and `release-tag`, described below. These two live in `.github/workflows/starter-release.yml`, a workflow that exists only in the Starter and is deleted whole, so that they stay out of `ci.yml`, which release-images calls. The release workflow's Deployment step is skipped in the Starter by a marked condition.
+- Starter-only tests, all in `tests/starter/` (marker, rename, strip, `demo-remove` and `.starter-release` fixtures) and the Starter-only CI jobs: `first-run`, which runs `just first-run` with the demo removed and everything Off and then typecheck, lint, unit tests, build with the chart-chunk check and integration tests; and `release-check` and `release-tag`, described below. These two live in `.github/workflows/starter-release.yml`, a workflow that exists only in the Starter and is deleted whole, so that they stay out of `ci.yml`, which release-images calls. The release workflow's Deployment step is skipped in the Starter by a marked condition.
+
+## What `just first-run` does
+
+`just first-run name-en=… name-fa=… slug=… demo=keep|remove profiles=… push=on|off` (script `scripts/starter/first-run.ts`) refuses when this document is gone. In order: `demo-remove` when `demo=remove`; rename (the slug, the repository reference from `git remote get-url origin`, the GHCR image path and both display names read from the i18n `app.name`; `CHANGELOG.md` is excluded and files named after the slug, such as the systemd units, are renamed); the chosen `COMPOSE_PROFILES` and Web Push kill switch into `.env.example` and `deploy/production.env.example`, printing the removal-checklist paths of the Off pieces; `.env` from `.env.example` with fresh secrets and the optional `admin-phone`, `admin-given-name`, `admin-family-name` (local only); then the `starter-meta` strip, the deletion of the Starter-only paths and the README stub. Arguments left out are asked for only on a terminal. `rename`, `profiles`, `env` and `strip` also run alone: `just first-run rename name-en=… name-fa=… slug=…`.
 
 ## Release checklist
 

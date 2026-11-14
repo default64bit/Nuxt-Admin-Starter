@@ -22,6 +22,9 @@ export async function getNavCounts({ db }: { db: Db }, actor: AdminActor): Promi
  */
 export async function getQueueCounts({ db }: { db: Db }, actor: AdminActor): Promise<Partial<AdminNavCounts>> {
   const counts: Partial<AdminNavCounts> = {};
+  // Read only by the queue counts a Project adds (the demo queue below is one); keeps the signature stable without them.
+  void db;
+  void actor;
   // demo-ticket:start
   if (actor.has("view-demo-tickets")) counts.openDemoTickets = await countOpenTickets(db);
   // demo-ticket:end

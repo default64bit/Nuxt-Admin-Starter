@@ -156,6 +156,15 @@ db-seed-dev:
 demo-remove *args:
     corepack pnpm exec tsx scripts/demo/demo-remove.ts {{args}}
 
+# starter-meta:start
+# One-shot setup of a Project created from the Starter (refuses once docs/starter.md is gone). Named arguments:
+#   just first-run name-en="Acme Admin" name-fa="..." slug=acme-admin demo=keep|remove profiles=media,edge,backup|none push=on|off
+# Missing arguments are prompted for only when stdin is a terminal. A step alone: `just first-run rename|profiles|env|strip ...`.
+[positional-arguments]
+first-run *args:
+    corepack pnpm exec tsx scripts/starter/first-run.ts "$@"
+# starter-meta:end
+
 # Idempotent bootstrap: start PostgreSQL, ensure the database exists, apply migrations, seed.
 db-prepare:
     just services-up

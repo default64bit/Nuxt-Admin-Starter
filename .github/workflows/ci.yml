@@ -226,3 +226,48 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # starter-meta:start
+  # Proves the Project path: `just first-run` with the demo removed and every Optional piece Off, then the gates a new Project
+  # runs first. Starter-only: first-run strips this job along with the other starter-meta lines.
+  first-run:
+    name: Project after first-run (demo removed, all Off)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      NODE_OPTIONS: --max-old-space-size=5120
+      TEST_DATABASE_ADMIN_URL: postgres://postgres:postgres@localhost:5432/postgres
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
+        with:
+          just-version: 1.43.0
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: just ci-install
+      - name: Run first-run non-interactively
+        run: just first-run name-en="Example Admin" name-fa="پنل نمونه" slug=example-admin demo=remove profiles=none push=off
+      - run: just typecheck
+      - run: just lint
+      - run: just test
+      - run: just build
+      - run: just perf-chart-chunk
+      # The integration harness picks its own databases; the generated .env would point it at a local stack instead.
+      - run: rm -f .env
+      - run: just test-integration
+  # starter-meta:end
