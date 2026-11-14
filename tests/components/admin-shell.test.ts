@@ -101,9 +101,10 @@ describe("admin shell", () => {
   });
 
   describe("top bar and Inbox mount points", () => {
-    it("has the bell and push-banner mount points", async () => {
+    // The push banner renders only when push is available and not yet on, so it is checked by the Web Push e2e spec.
+    it("has the Inbox bell in the top bar", async () => {
       const wrapper = await mount(AdminLayout, { slots: { default: () => h("p", "x") } });
-      for (const slot of ["inbox-bell", "admin-push-banner"]) expect(wrapper.find(`[data-slot="${slot}"]`).exists(), slot).toBe(true);
+      expect(wrapper.find('[data-slot="inbox-bell"]').exists()).toBe(true);
     });
 
     it("keeps the language and theme switches out of the top bar (they live in the user menu)", async () => {
