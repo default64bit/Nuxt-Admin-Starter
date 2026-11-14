@@ -9,7 +9,6 @@ import { useAdminFormat } from "~/composables/admin/useAdminFormat";
 import { useChartStyle } from "~/composables/admin/useChartStyle";
 import type { ModuleRangeKey } from "~~/shared/constants/analytics";
 import { DEMO_TICKETS_BY_STATUS_KEY, moduleTitleKey } from "~~/shared/constants/dashboard-modules";
-import { DEMO_TICKET_STATUS_MESSAGE_KEYS, type DemoTicketStatus } from "~~/shared/constants/demo-ticket";
 import DemoTicketStatusBadge from "./DemoTicketStatusBadge.vue";
 
 // Demo tickets by status: the pipeline now, one row per status in order, each opening the list on that status. The
@@ -23,7 +22,6 @@ const query = useDashboardModule(DEMO_TICKETS_BY_STATUS_KEY, noRange, 0);
 const title = computed(() => t(moduleTitleKey(DEMO_TICKETS_BY_STATUS_KEY)));
 const status = computed<"loading" | "error" | "ready">(() => (query.isError.value ? "error" : query.data.value ? "ready" : "loading"));
 const max = computed(() => Math.max(1, ...(query.data.value?.statuses.map((entry) => entry.count) ?? [])));
-const spoken = (value: DemoTicketStatus, count: number) => `${t(`admin.demoTickets.statuses.${DEMO_TICKET_STATUS_MESSAGE_KEYS[value]}`)}: ${num(count)}`;
 </script>
 
 <template>
@@ -45,7 +43,6 @@ const spoken = (value: DemoTicketStatus, count: number) => `${t(`admin.demoTicke
         <NuxtLink
           :to="{ path: localePath('/admin/demo-tickets'), query: { status: entry.status } }"
           class="hover:bg-accent focus-visible:ring-ring/50 flex min-w-0 flex-1 items-center justify-between gap-3 rounded-md px-2 py-1 outline-none focus-visible:ring-3"
-          :aria-label="spoken(entry.status, entry.count)"
         >
           <DemoTicketStatusBadge :status="entry.status" />
           <span class="font-semibold tabular-nums">{{ num(entry.count) }}</span>
