@@ -19,11 +19,13 @@ services:
       timeout: 3s
       retries: 3
       start_period: 0s
+  notification-worker: *release
   migrate: *release
   seed: *release
   db-ensure: *release
   monitoring-db-init: *release
   storage-init: *release
+  media-gc: *release
   # `!reset` does not survive a YAML merge key, so each infra service resets its host ports itself: a dry-run must
   # never bind 5432 or 8000 on the host (CI's integration job already has PostgreSQL on 5432).
   postgres:

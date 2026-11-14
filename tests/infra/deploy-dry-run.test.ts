@@ -185,11 +185,11 @@ describe.skipIf(!available)("just deploy dry-run", () => {
     expect(lastResult()).toBe(resultOf(GOOD_A, "success", "done"));
   }, 290_000);
 
-  it("moves the previous release marker on the next deploy, runs storage-init when media is listed and starts GlitchTip only when monitoring is listed", () => {
+  it("moves the previous release marker on the next deploy, runs storage-init (again as the app dependency) when media is listed and starts GlitchTip only when monitoring is listed", () => {
     const before = events().length;
     const { status } = deploy(GOOD_B, { COMPOSE_PROFILES: "monitoring,media" });
     expect(status).toBe(0);
-    expect(events().slice(before)).toEqual([`db:migrate ${GOOD_B}`, `db:seed ${GOOD_B}`, `storage:init ${GOOD_B}`]);
+    expect(events().slice(before)).toEqual([`db:migrate ${GOOD_B}`, `db:seed ${GOOD_B}`, `storage:init ${GOOD_B}`, `storage:init ${GOOD_B}`, `monitoring:db:ensure ${GOOD_B}`]);
     expect(state()).toBe(`CURRENT_SHA=${GOOD_B}\nPREVIOUS_SHA=${GOOD_A}\n`);
     expect(compose("ps", "--status", "running", "--format", "{{.Service}}").stdout).toMatch(/glitchtip/);
   }, 290_000);
@@ -265,7 +265,7 @@ describe.skipIf(!available)("just deploy dry-run", () => {
     const newDir = makeReleaseDir(UNREADY, "new-release-files");
     const { status, output } = deploy(UNREADY, withLabel, newDir);
     expect(status).not.toBe(0);
-    expect(output).toContain(`Reverting app to previous release ${GOOD_A} (files from ${releaseDirPath(GOOD_A)})`);
+    expect(output).toContain(`Reverting app notification-worker to previous release ${GOOD_A} (files from ${releaseDirPath(GOOD_A)})`);
     expect(output).toContain(`Reverted to previous release ${GOOD_A}`);
     expect(serviceImages().app).toBe(`${imageRepo}:${GOOD_A}`);
     expect(appLabel()).toBe("previous-release-files");

@@ -59,7 +59,7 @@ describe.skipIf(!enabled)("compose-check", () => {
     const addOptionalDependency = (text: string) =>
       text
         .replace("\nnetworks:\n  backend:", "  storage:\n    image: ghcr.io/default64bit/nuxt-admin-starter/base/postgres:18.6-bookworm@sha256:afc7e2d441324c0388fa80c3d24f733b4194a4eb7f47dd8ee2b08eb1a24a647c\n    profiles: [media]\n    networks: [backend]\n    logging: *logging\n\nnetworks:\n  backend:")
-        .replace("      postgres:\n        condition: service_healthy\n    healthcheck:", "      postgres:\n        condition: service_healthy\n      storage:\n        condition: service_started\n    healthcheck:");
+        .replace("        required: false\n    healthcheck:", "        required: false\n      storage:\n        condition: service_started\n    healthcheck:");
     const on = withOverlay("compose.yaml", addOptionalDependency, withProfiles("media"));
     expect(on.status, on.output).toBe(0);
     const off = withOverlay("compose.yaml", addOptionalDependency, withProfiles("edge,backup"));
