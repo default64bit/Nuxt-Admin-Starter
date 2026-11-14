@@ -191,6 +191,19 @@ CREATE TABLE "notifications" (
 	CONSTRAINT "notifications_token_limit" CHECK ("notifications"."tokens" IS NULL OR cardinality("notifications"."tokens") <= 3)
 );
 --> statement-breakpoint
+CREATE TABLE "push_subscriptions" (
+	"id" uuid PRIMARY KEY DEFAULT uuidv7() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"endpoint" text NOT NULL,
+	"p256dh" text NOT NULL,
+	"auth" text NOT NULL,
+	"locale_scope" "locale" NOT NULL,
+	"device_label" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"last_success_at" timestamp with time zone,
+	"last_failure_at" timestamp with time zone
+);
+--> statement-breakpoint
 ALTER TABLE "admin_audit_events" ADD CONSTRAINT "admin_audit_events_actor_user_id_users_id_fk" FOREIGN KEY ("actor_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "otp_challenges" ADD CONSTRAINT "otp_challenges_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
@@ -209,6 +222,7 @@ ALTER TABLE "notification_reads" ADD CONSTRAINT "notification_reads_user_id_user
 ALTER TABLE "notification_settings" ADD CONSTRAINT "notification_settings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_required_permission_permissions_key_fk" FOREIGN KEY ("required_permission") REFERENCES "public"."permissions"("key") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_recipient_user_id_users_id_fk" FOREIGN KEY ("recipient_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "push_subscriptions" ADD CONSTRAINT "push_subscriptions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "admin_audit_events_time_idx" ON "admin_audit_events" USING btree ("created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_entity_idx" ON "admin_audit_events" USING btree ("entity_type","entity_id","created_at" DESC NULLS LAST);--> statement-breakpoint
 CREATE INDEX "admin_audit_events_actor_idx" ON "admin_audit_events" USING btree ("actor_user_id","created_at" DESC NULLS LAST);--> statement-breakpoint
@@ -231,8 +245,9 @@ CREATE INDEX "notification_outbox_retention_idx" ON "notification_outbox" USING 
 CREATE INDEX "notification_outbox_recipient_user_idx" ON "notification_outbox" USING btree ("recipient_user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "notifications_dedupe_key_unique" ON "notifications" USING btree ("dedupe_key");--> statement-breakpoint
 CREATE INDEX "notifications_unresolved_idx" ON "notifications" USING btree ("required_permission","created_at" DESC NULLS LAST) WHERE "notifications"."resolved_at" IS NULL;--> statement-breakpoint
-CREATE INDEX "notifications_source_idx" ON "notifications" USING btree ("source_entity_type","source_entity_id");
---> statement-breakpoint
+CREATE INDEX "notifications_source_idx" ON "notifications" USING btree ("source_entity_type","source_entity_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "push_subscriptions_endpoint_unique" ON "push_subscriptions" USING btree ("endpoint");--> statement-breakpoint
+CREATE INDEX "push_subscriptions_user_idx" ON "push_subscriptions" USING btree ("user_id");--> statement-breakpoint
 -- hand-written-sql:start
 -- Drizzle cannot generate triggers or functions. After regenerating this baseline from the schema, re-append this
 -- whole block (everything from the `hand-written-sql:start` line to the `hand-written-sql:end` line).

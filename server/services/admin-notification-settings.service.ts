@@ -2,6 +2,7 @@ import type { Db } from "../database/types";
 import type { NotificationSettings, NotificationSettingsSaveBody } from "../../shared/schemas/admin-notification-settings";
 import { getAdminChannels, type AdminChannelRegistry } from "../notifications/admin-channels";
 import { channelAvailability } from "../notifications/channel-health";
+import { pushPublicKeyOf } from "../notifications/push/config";
 import { healthOf, messageLocaleOf, preferencesOf, saveMessageLocale, savePreference } from "../repositories/admin-channels.repository";
 
 // A User's own notification settings: reads and writes touch only the actor's rows. They are a personal preference, so
@@ -27,6 +28,8 @@ export async function getNotificationSettings({ db, channels = getAdminChannels(
       connectUrl: connected ? null : (channel.connectUrl?.() ?? null),
     });
   }
+  const vapidPublicKey = channels.some((channel) => channel.key === "push") ? pushPublicKeyOf() : null;
+  if (vapidPublicKey) result.vapidPublicKey = vapidPublicKey;
   return result;
 }
 

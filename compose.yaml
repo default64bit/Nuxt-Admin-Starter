@@ -56,6 +56,11 @@ services:
       # Error capture (the GlitchTip Optional piece): empty means not configured and nothing is sent.
       NUXT_PUBLIC_GLITCHTIP_DSN: ${NUXT_PUBLIC_GLITCHTIP_DSN:-}
       NUXT_GLITCHTIP_SERVER_DSN: ${NUXT_GLITCHTIP_SERVER_DSN:-}
+      # Web Push (Optional piece): empty keys mean not configured.
+      NUXT_VAPID_PUBLIC_KEY: ${NUXT_VAPID_PUBLIC_KEY:-}
+      NUXT_VAPID_PRIVATE_KEY: ${NUXT_VAPID_PRIVATE_KEY:-}
+      NUXT_VAPID_SUBJECT: ${NUXT_VAPID_SUBJECT:-}
+      NUXT_ADMIN_CHANNEL_PUSH_ENABLED: ${NUXT_ADMIN_CHANNEL_PUSH_ENABLED:-true}
     ports:
       - 127.0.0.1:${APP_HOST_PORT:-3000}:3000
     depends_on:
@@ -79,6 +84,11 @@ services:
       DATABASE_URL: ${DATABASE_URL_DOCKER:?Set DATABASE_URL_DOCKER in .env}
       NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:?Set the public site URL in .env}
       WORKER_HEARTBEAT_FILE: /tmp/worker-heartbeat
+      # Web Push (Optional piece): empty keys mean not configured.
+      NUXT_VAPID_PUBLIC_KEY: ${NUXT_VAPID_PUBLIC_KEY:-}
+      NUXT_VAPID_PRIVATE_KEY: ${NUXT_VAPID_PRIVATE_KEY:-}
+      NUXT_VAPID_SUBJECT: ${NUXT_VAPID_SUBJECT:-}
+      NUXT_ADMIN_CHANNEL_PUSH_ENABLED: ${NUXT_ADMIN_CHANNEL_PUSH_ENABLED:-true}
     depends_on:
       postgres:
         condition: service_healthy

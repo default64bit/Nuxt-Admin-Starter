@@ -17,8 +17,8 @@ import { parseApiError } from "~~/shared/utils/api-error-client";
 import { formatDateTime } from "~~/shared/utils/format-date";
 
 // The User's own notification settings, in two sections: "Your account" (one card per installed Channel and the Message
-// language they all use; saved together) and "This device" (the alert sound of this browser, applied at once and stored
-// in the browser, so it sits outside the Save form). The Inbox itself cannot be turned off, so it has no card. A
+// language they all use; saved together) and "This device" (browser push, the alert sound and the install of this
+// browser, applied at once and kept in the browser, so they sit outside the Save form). The Inbox itself cannot be turned off, so it has no card. A
 // Channel card appears only when its adapter is installed. Any signed-in User may open it; it changes only their own choices.
 definePageMeta({});
 
@@ -131,6 +131,7 @@ async function submit() {
           <h2 id="this-device-title" class="text-lg font-semibold">{{ t("admin.account.notifications.device.title") }}</h2>
           <p class="text-muted-foreground text-sm">{{ t("admin.account.notifications.device.help") }}</p>
         </div>
+        <AdminPushHereCard />
         <Card data-slot="device-sound" role="group" aria-labelledby="device-sound-title">
           <CardHeader>
             <CardTitle id="device-sound-title" class="text-base">{{ t("admin.account.notifications.device.sound.title") }}</CardTitle>
@@ -141,6 +142,7 @@ async function submit() {
             <Switch id="device-sound-switch" v-model="sound" />
           </CardContent>
         </Card>
+        <AdminInstallCard />
       </section>
     </div>
   </AdminPageHeader>

@@ -36,6 +36,10 @@ export const ADMIN_OPERATIONS: Record<string, AdminOperation> = {
 // are never refused, and they are not audited. Mutating admin routes listed here need no ADMIN_OPERATIONS row.
 export const ADMIN_PREFERENCE_ROUTES: readonly string[] = [
   "PUT account/notification-settings",
+  "POST account/push-subscriptions",
+  "DELETE account/push-subscriptions",
+  "DELETE account/push-subscriptions/:id",
+  "POST account/push-subscriptions/:id/test",
   "POST notifications/:id/read",
   "DELETE notifications/:id/read",
   "POST notifications/read-all",

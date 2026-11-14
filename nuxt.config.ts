@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { buildRouteRules } from "./shared/utils/route-rules";
+import { bundleAdminWorker } from "./scripts/admin-worker/bundle";
 
 // A locale's message files: `<code>.json` plus every feature file `<feature>.<code>.json` beside it (for example
 // `demo-ticket.fa.json`), merged at load. Removing a feature means deleting its message files; nothing here changes.
@@ -95,6 +96,8 @@ export default defineNuxtConfig({
     // Put the standard `/api/v1` error body (ADR-0015) in front of Nuxt's own error renderer, which
     // keeps answering every non-API request. Setting `nitro.errorHandler` directly would replace it.
     "nitro:config"(nitroConfig) {
+      // The admin service worker script (Web Push + PWA, ADR-0028), built from `shared/admin-worker/`; the worker routes serve it.
+      nitroConfig.virtual = { ...nitroConfig.virtual, "#admin-worker-source": () => `export default ${JSON.stringify(bundleAdminWorker())};` };
       // Drop nuxt-auth-utils' own session routes; `server/api/_auth/session.*` answers 404 instead.
       nitroConfig.handlers = (nitroConfig.handlers ?? []).filter((handler) => handler?.route !== "/api/_auth/session");
       const apiHandler = fileURLToPath(new URL("./server/error-handler.ts", import.meta.url));

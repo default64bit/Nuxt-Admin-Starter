@@ -61,6 +61,10 @@ while (!stopping) {
       lastPurge = Date.now();
       const purged = await purgeExpiredPayloads(db);
       if (purged) log({ level: "info", event: "retention_purge", purged });
+      for (const channel of channels) {
+        const removed = await channel.purge?.(db);
+        if (removed) log({ level: "info", event: "channel_purge", channel: channel.key, removed });
+      }
     }
   } catch (error) {
     log({ level: "error", event: "loop_error", message: error instanceof Error ? error.name : "error" });

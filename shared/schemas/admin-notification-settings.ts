@@ -31,4 +31,6 @@ export interface NotificationSettings {
   /** One entry per registered Channel; empty while no Channel adapter is installed. */
   channels: ChannelSettings[];
   locale: Locale;
+  /** The VAPID public key a browser subscribes with; present only while Web Push is operational by configuration. */
+  vapidPublicKey?: string;
 }

@@ -129,7 +129,7 @@ dbSuite("Demo ticket Notifications", async () => {
 
   it("saves the Message language and defaults it to fa", async () => {
     const settings = async (cookie: string) => (await (await call(cookie, "GET", "/api/v1/admin/account/notification-settings")).json()) as { locale: string; channels: unknown[] };
-    expect(await settings(alice.cookie)).toEqual({ locale: "fa", channels: [] });
+    expect(await settings(alice.cookie)).toMatchObject({ locale: "fa", channels: [{ key: "push", availability: "not_configured", enabled: true }] });
     expect((await call(alice.cookie, "PUT", "/api/v1/admin/account/notification-settings", { locale: "en" })).status).toBe(200);
     expect((await settings(alice.cookie)).locale).toBe("en");
     expect((await settings(bob.cookie)).locale).toBe("fa");

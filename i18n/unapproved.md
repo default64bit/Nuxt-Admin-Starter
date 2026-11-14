@@ -66,3 +66,8 @@ key from this list when it is approved.
 
 - every key under `admin.notifications` and `admin.account.notifications`
 - the `fa` copy and titles of every entry in `shared/constants/notification-catalog.ts` and the priority labels in `shared/utils/attention-message.ts`
+
+## Web Push and PWA
+
+- every key in `i18n/locales/web-push-pwa.fa.json`
+- the `fa` test push copy in `shared/constants/admin-push.ts`

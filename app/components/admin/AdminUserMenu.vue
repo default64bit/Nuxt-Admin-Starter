@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdminUserMenuLinks } from "~/composables/admin/useAdminNav";
+import { removeThisBrowserPush } from "~/composables/admin/useAdminPush";
 import { localizedPath } from "~~/shared/utils/locale-path";
 import { ADMIN_USER_MENU_ICONS, DEFAULT_USER_MENU_ICON } from "./admin-nav-icons";
 
@@ -36,6 +37,8 @@ const initial = computed(() => Array.from(name.value)[0] ?? "");
 // The Inbox slice adds its Web Push and install items above the language entry.
 
 async function onSignOut() {
+  // An explicit sign-out removes this browser's push subscription first (it never blocks for long or throws).
+  await removeThisBrowserPush();
   try {
     await signOut.mutateAsync();
   } catch {

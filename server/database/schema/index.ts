@@ -5,6 +5,7 @@ export * from "./identity";
 export * from "./seeds";
 export * from "./dashboard";
 export * from "./notifications";
+export * from "./push-subscriptions";
 // demo-ticket:start
 export * from "./demo-ticket";
 // demo-ticket:end

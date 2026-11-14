@@ -2,10 +2,12 @@ import type { Db, Executor } from "../database/types";
 import type { Locale } from "../../shared/constants/database-enums";
 import type { AdminChannelKey } from "../../shared/constants/admin-channels";
 import type { AttentionType } from "../../shared/constants/notification-catalog";
+import { createPushChannel } from "./push/channel";
+import { resolvePushConfig } from "./push/config";
 
 // The one contract every outside Notification Channel implements (ADR-0021). The Inbox is not a Channel: it is the base
-// record every event writes. The Starter ships the contract, the outbox, the worker and the circuit breaker with an
-// empty registry; the Telegram and Web Push adapters (Optional pieces) add themselves to `createAdminChannelRegistry`,
+// record every event writes. The Starter ships the contract, the outbox, the worker and the circuit breaker; the Web Push adapter (an Optional
+// piece) and the Telegram adapter add themselves to `createAdminChannelRegistry`,
 // and a later admin SMS or email Channel is one adapter plus one registry entry; domain services and events never change.
 
 /** What configuration alone says; the breaker's `degraded` is layered on top by `channelAvailability`. */
@@ -55,13 +57,16 @@ export interface AdminNotificationChannel {
   probe(): Promise<ChannelDeliveryResult>;
   /** Where a User without a connection goes to connect, when the Channel has such a place. */
   connectUrl?(): string | null;
+  /** The worker's hourly tidy for state the Channel keeps (stale subscriptions); returns how many rows it removed. */
+  purge?(db: Db): Promise<number>;
 }
 
 export type AdminChannelRegistry = readonly AdminNotificationChannel[];
 
 /** The registry from deployment configuration. Read in the app and in the worker alike, so both agree. */
 export function createAdminChannelRegistry(): AdminChannelRegistry {
-  return [];
+  // Always registered: a missing VAPID key pair reads "not configured" and the kill switch reads "disabled".
+  return [createPushChannel(resolvePushConfig())];
 }
 
 let current: AdminChannelRegistry | null = null;
