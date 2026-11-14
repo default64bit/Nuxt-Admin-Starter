@@ -128,7 +128,7 @@ Catalogues are the extension points, and each has a completeness test that fails
 
 ## Optional pieces
 
-Seven pieces can be turned Off with no code change or Removed with a checklist: media storage, error tracking, Telegram, Web Push with the PWA, backups, VPS deploy and the edge proxy. Read ADR 0029 and the per-piece checklists in `docs/optional-pieces/` before touching one. Never make core code depend on an Optional piece being present.
+Seven pieces can be turned Off with no code change or Removed with a checklist: media storage, error tracking, Telegram, Web Push with the PWA, backups, VPS deploy and the edge proxy. Read ADR 0029 and the per-piece checklists in `docs/optional-pieces/` before touching one: [media](docs/optional-pieces/media.md), [GlitchTip](docs/optional-pieces/glitchtip.md), [Web Push + PWA](docs/optional-pieces/web-push-pwa.md), [backups](docs/optional-pieces/backups.md), [VPS deploy](docs/optional-pieces/vps-deploy.md) and [Caddy](docs/optional-pieces/caddy.md). Never make core code depend on an Optional piece being present.
 
 ## Acceptance criteria and tests
 

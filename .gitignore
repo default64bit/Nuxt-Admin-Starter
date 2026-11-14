@@ -16,8 +16,11 @@ test-results/
 .deploy/
 
 # Agent skills are restored from skills-lock.json (`npx skills experimental_install`), not committed.
-.agents/skills/
-.claude/skills/
+# The one exception is the first-party add-domain skill and its .claude/skills symlink.
+.agents/skills/*
+!.agents/skills/add-domain/
+.claude/skills/*
+!.claude/skills/add-domain
 .claude/worktrees/
 .claude/settings.local.json
 

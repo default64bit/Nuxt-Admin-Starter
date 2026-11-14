@@ -1,6 +1,6 @@
 # Admin Dashboard
 
-Living spec for the Dashboard framework and the New accounts module. Decisions: `.specs/decision-log.md` "Dashboard"; ADR 0024 (live analytics, short cache), 0025 (Chart styles), 0026 (reordering). Needs attention, the Demo ticket modules and the trend chart are added by later slices as registry entries.
+Living spec for the Dashboard framework and its shipped modules: Needs attention, New accounts and the two Demo ticket modules. Decisions: `.specs/decision-log.md` "Dashboard"; ADR 0024 (live analytics, short cache), 0025 (Chart styles), 0026 (reordering). A Project adds a module as a registry entry (`docs/guides/add-domain.md`, step 8).
 
 ## Modules
 
@@ -21,6 +21,33 @@ The module (Permission `view-users`, hue 100) shows accounts created in the rang
 - GIVEN a User who lacks `view-users`
 - WHEN they request the module, or save a range for it
 - THEN the server answers 403, and the picker never offers it
+
+### Requirement: Needs attention
+
+The module (no gate Permission, `fixed`) is always first, cannot be removed or moved, and has one row per queue the User may open: a nav item with a `countKey` whose page the User may open. A row's count is the menu badge's own count (`getQueueCounts`), is never cached, and links to the queue's page; a row with nothing waiting is muted and has no link. The module hides itself when no row is visible, and shows "All caught up" when every visible row is zero. A Project adds a row with the nav-count queue recipe in `docs/guides/add-domain.md` (nav item `countKey`, `NAV_QUEUE_COUNT_KEYS`, the nav-counts schema, a `getQueueCounts` line and the `admin.dashboard.needsAttention.rows.<countKey>` message).
+
+#### Scenario: A User without the queue's Permission
+- GIVEN a User who lacks `view-demo-tickets`
+- WHEN they request Needs attention
+- THEN the Open demo tickets row is absent, and the module is hidden when no other row remains
+
+#### Scenario: A queue changes
+- GIVEN a poll that sees a queue count change
+- WHEN the nav counts answer
+- THEN the queue's list and the Needs attention module refetch in the background
+
+### Requirement: Demo ticket modules
+
+Part of the Reference module (`demo-ticket` markers), both gated by `view-demo-tickets`. **Demo tickets by status** (hue 215, widths third or half, no range) shows how many tickets are in each status now: the whole pipeline in order, zero for an empty status, read live and never cached. **Demo tickets created per day** (hue 190, widths half or full, ranges last 7 days, last 30 days, this month and last month, default last 30 days) shows one bucket per Tehran day of the range with zero days included, the total, and a trend chart in the User's Chart style. Neither exists after `just demo-remove`.
+
+#### Scenario: A User without `view-demo-tickets`
+- GIVEN a User who lacks `view-demo-tickets`
+- WHEN they request either module
+- THEN the server answers 403, and the picker never offers it
+
+### Requirement: Default layout
+
+A User with no saved arrangement sees Needs attention first, then the modules marked in the default layout in registry order: Demo tickets by status, Demo tickets created per day, New accounts. Only modules whose Permission the User holds appear.
 
 ## Layout storage
 
